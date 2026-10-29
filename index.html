@@ -6,7 +6,7 @@
   <title>Participant Access</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-theme="light">
   <section id="loginScreen" class="auth-shell" aria-live="polite">
     <h1 class="brand">Participant Access</h1>
     <p class="subtitle">Please sign in to access this testing page.</p>
@@ -19,7 +19,10 @@
 
       <div class="form-group">
         <label for="password">Password</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+        <div class="password-wrap">
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+          <button id="togglePassword" type="button" class="toggle-password" aria-label="Show password">Show</button>
+        </div>
       </div>
 
       <button type="submit" class="primary-btn">Login</button>
@@ -28,26 +31,72 @@
   </section>
 
   <main id="contentPage" class="page hidden" aria-live="polite">
-    <div class="page-header">
-      <h1>Testing Page</h1>
-      <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
-    </div>
-
-    <div class="page-card">
-      <p class="welcome">Welcome, <span id="userNameLabel">Participant</span>!</p>
-      <p class="note">This page is ready for testing. Access is restricted to approved participants only.</p>
-
-      <button id="testButton" type="button" class="secondary-btn">Run test</button>
-      <div id="result" class="result" role="status" aria-live="polite"></div>
-
-      <div id="messageLinks" class="hidden">
-        <p>
-          <a href="sms:+917355289961?body=Hello!%20I%20have%20an%20inquiry%20from%20your%20website.">Send SMS to Support</a>
-        </p>
-        <p>
-          <a href="https://wa.me/917355289961?text=Hi!%20I'm%20interested%20in%20Credflex." target="_blank" rel="noopener noreferrer">Chat with us on WhatsApp</a>
-        </p>
+    <header class="app-header">
+      <h1>Credflex Messaging Panel</h1>
+      <div class="header-actions">
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">🌙 Dark</button>
+        <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
       </div>
+    </header>
+
+    <div class="dashboard">
+      <section class="panel">
+        <h2>Add Contact</h2>
+        <form id="contactForm">
+          <div class="form-group">
+            <label for="contactName">Name</label>
+            <input id="contactName" type="text" placeholder="Enter contact name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="contactMobile">Mobile Number</label>
+            <input id="contactMobile" type="tel" placeholder="Enter mobile number" required>
+          </div>
+
+          <button type="submit" class="primary-btn">Add User</button>
+        </form>
+
+        <div class="contacts-box">
+          <div class="contacts-header">
+            <h3>Saved Contacts</h3>
+          </div>
+          <ul id="contactList" class="contact-list"></ul>
+        </div>
+      </section>
+
+      <section class="panel composer-panel">
+        <h2>Send Message</h2>
+
+        <div class="form-group">
+          <label for="contactSelect">Select Recipient</label>
+          <select id="contactSelect">
+            <option value="">Choose a contact</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="messageText">Message</label>
+          <textarea id="messageText" rows="6" placeholder="Type your message here..."></textarea>
+        </div>
+
+        <div class="composer-actions">
+          <button type="button" id="saveDraftBtn" class="secondary-btn small">Save Draft</button>
+          <button type="button" id="copyMessageBtn" class="secondary-btn small">Copy</button>
+          <button type="button" id="sendMessageBtn" class="primary-btn small send-btn">Send Message</button>
+        </div>
+
+        <div class="drafts-box">
+          <label for="draftSelect">Saved Messages</label>
+          <div class="draft-row">
+            <select id="draftSelect">
+              <option value="">Select a saved message</option>
+            </select>
+            <button type="button" id="loadDraftBtn" class="ghost-btn">Use</button>
+          </div>
+        </div>
+
+        <div id="statusMessage" class="status-message" aria-live="polite"></div>
+      </section>
     </div>
   </main>
 
