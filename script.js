@@ -28,7 +28,8 @@ const saveDraftBtn = document.getElementById("saveDraftBtn");
 const loadDraftBtn = document.getElementById("loadDraftBtn");
 const draftSelect = document.getElementById("draftSelect");
 const copyMessageBtn = document.getElementById("copyMessageBtn");
-const sendMessageBtn = document.getElementById("sendMessageBtn");
+const sendSmsBtn = document.getElementById("sendSmsBtn");
+const sendWhatsAppBtn = document.getElementById("sendWhatsAppBtn");
 const statusMessage = document.getElementById("statusMessage");
 
 function showMessage(el, text, type) {
@@ -87,6 +88,16 @@ function getDrafts() {
 
 function saveDrafts(drafts) {
   localStorage.setItem(draftStorageKey, JSON.stringify(drafts));
+}
+
+function normalizePhoneForSms(mobile) {
+  const digits = mobile.replace(/\D/g, "").replace(/^0+/, "");
+  return digits ? `+${digits}` : "";
+}
+
+function normalizePhoneForWhatsApp(mobile) {
+  const digits = mobile.replace(/\D/g, "").replace(/^0+/, "");
+  return digits;
 }
 
 function renderContacts() {
@@ -215,7 +226,7 @@ async function copyMessage() {
   }
 }
 
-function sendMessage() {
+function triggerMessage(type) {
   const recipient = contactSelect.value;
   const text = messageText.value.trim();
 
@@ -236,12 +247,20 @@ function sendMessage() {
     return;
   }
 
-  showStatus(
-    `Message sent successfully to ${selectedContact.name} (${selectedContact.mobile}).`,
-    "success"
-  );
+  const smsUrl = `sms:${normalizePhoneForSms(selectedContact.mobile)}?body=${encodeURIComponent(text)}`;
+  const whatsappUrl = `https://wa.me/${normalizePhoneForWhatsApp(selectedContact.mobile)}?text=${encodeURIComponent(text)}`;
 
-  messageText.value = "";
+  if (type === "sms") {
+    window.location.href = smsUrl;
+    showStatus(`Opening SMS to ${selectedContact.name} (${selectedContact.mobile}).`, "success");
+    return;
+  }
+
+  if (type === "whatsapp") {
+    window.open(whatsappUrl, "_blank");
+    showStatus(`Opening WhatsApp chat with ${selectedContact.name} (${selectedContact.mobile}).`, "success");
+    return;
+  }
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -286,7 +305,8 @@ contactForm.addEventListener("submit", addContact);
 saveDraftBtn.addEventListener("click", saveDraft);
 loadDraftBtn.addEventListener("click", loadDraft);
 copyMessageBtn.addEventListener("click", copyMessage);
-sendMessageBtn.addEventListener("click", sendMessage);
+sendSmsBtn.addEventListener("click", () => triggerMessage("sms"));
+sendWhatsAppBtn.addEventListener("click", () => triggerMessage("whatsapp"));
 
 if (isLoggedIn()) {
   showContent("Participant");
