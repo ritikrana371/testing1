@@ -21,6 +21,7 @@ const themeToggleBtn = document.getElementById("themeToggle");
 const contactForm = document.getElementById("contactForm");
 const contactNameInput = document.getElementById("contactName");
 const contactMobileInput = document.getElementById("contactMobile");
+const pickContactBtn = document.getElementById("pickContactBtn");
 const contactList = document.getElementById("contactList");
 const contactSelect = document.getElementById("contactSelect");
 const contactFileInput = document.getElementById("contactFile");
@@ -216,6 +217,41 @@ function importContactsFromFile() {
     });
 }
 
+async function pickContactFromDevice() {
+  if (!("contacts" in navigator) || !("select" in navigator.contacts)) {
+    showStatus("Contact picker is not supported in this browser. Please add the mobile number manually.", "error");
+    return;
+  }
+
+  try {
+    const contacts = await navigator.contacts.select(["name", "tel"], { multiple: true });
+
+    if (!contacts || !contacts.length) {
+      showStatus("No contact was selected.", "error");
+      return;
+    }
+
+    const imported = contacts
+      .map((contact) => {
+        const phone = contact.tel && contact.tel[0] ? contact.tel[0].replace(/[^\d+]/g, "") : "";
+        const name = contact.name || "Imported Contact";
+        return phone ? { name, mobile: phone } : null;
+      })
+      .filter(Boolean);
+
+    if (!imported.length) {
+      showStatus("Selected contact does not contain a valid phone number.", "error");
+      return;
+    }
+
+    mergeImportedContacts(imported);
+    showStatus(`${imported.length} contact(s) added from your device.`, "success");
+  } catch (error) {
+    console.error(error);
+    showStatus("Your browser blocked access to phone contacts. Please use the manual form or import a .vcf file.", "error");
+  }
+}
+
 function renderContacts() {
   const contacts = getContacts();
   contactList.innerHTML = "";
@@ -275,10 +311,10 @@ function addContact(event) {
   }
 
   const contacts = getContacts();
-  const exists = contacts.some((contact) => contact.mobile === mobile);
+  const exists = contacts.some((contact) => contact.mobile === mobile || contact.name === name);
 
   if (exists) {
-    showStatus("This mobile number already exists.", "error");
+    showStatus("This contact already exists.", "error");
     return;
   }
 
@@ -419,6 +455,7 @@ themeToggleBtn.addEventListener("click", () => {
 });
 
 contactForm.addEventListener("submit", addContact);
+pickContactBtn.addEventListener("click", pickContactFromDevice);
 importContactsBtn.addEventListener("click", importContactsFromFile);
 saveDraftBtn.addEventListener("click", saveDraft);
 loadDraftBtn.addEventListener("click", loadDraft);

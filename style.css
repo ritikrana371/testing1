@@ -30,7 +30,9 @@ body[data-theme="dark"] {
   --button-light: #1e293b;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -186,6 +188,21 @@ textarea:focus {
   margin-bottom: 1rem;
 }
 
+.header-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.app-header h1 {
+  margin: 0;
+}
+
+.welcome-text {
+  color: var(--muted);
+  font-weight: 600;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -204,6 +221,21 @@ textarea:focus {
   border-radius: 16px;
   padding: 1.25rem;
   box-shadow: 0 10px 30px var(--shadow);
+}
+
+.import-box {
+  margin-top: 1rem;
+}
+
+.import-box input[type="file"] {
+  margin-top: 0.45rem;
+  margin-bottom: 0.75rem;
+  padding: 0.6rem;
+  background: var(--panel);
+}
+
+.import-btn {
+  width: 100%;
 }
 
 .contacts-box,
