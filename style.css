@@ -1,7 +1,7 @@
-/* Global styles */
 :root {
   --bg: #f4f7fb;
   --card: #ffffff;
+  --panel: #f9fafb;
   --primary: #1d4ed8;
   --primary-dark: #1e3a8a;
   --text: #1f2937;
@@ -10,6 +10,24 @@
   --success: #166534;
   --error: #b91c1c;
   --shadow: rgba(15, 23, 42, 0.08);
+  --input-bg: #ffffff;
+  --button-light: #eff6ff;
+}
+
+body[data-theme="dark"] {
+  --bg: #0f172a;
+  --card: #111827;
+  --panel: #1f2937;
+  --primary: #60a5fa;
+  --primary-dark: #bfdbfe;
+  --text: #e5e7eb;
+  --muted: #cbd5e1;
+  --border: #374151;
+  --success: #4ade80;
+  --error: #f87171;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --input-bg: #0b1220;
+  --button-light: #1e293b;
 }
 
 * { box-sizing: border-box; }
@@ -17,15 +35,19 @@
 body {
   margin: 0;
   min-height: 100vh;
-  display: grid;
-  place-items: center;
   background: linear-gradient(135deg, #eef4ff 0%, #f8fafc 100%);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+body[data-theme="dark"] {
+  background: linear-gradient(135deg, #020817 0%, #111827 100%);
 }
 
 .auth-shell {
   width: min(92vw, 420px);
+  margin: 80px auto;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -33,16 +55,19 @@ body {
   padding: 2rem;
 }
 
-.auth-shell.hidden,
-.content.hidden,
+.page {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem 2rem;
+}
+
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .brand {
-  font-size: 1.75rem;
-  font-weight: 700;
   margin: 0 0 0.5rem;
+  font-size: 2rem;
   color: var(--primary-dark);
 }
 
@@ -58,53 +83,89 @@ body {
 
 label {
   display: block;
-  font-size: 0.92rem;
-  font-weight: 600;
   margin-bottom: 0.45rem;
+  font-weight: 600;
 }
 
-input {
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
   width: 100%;
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 10px;
-  font-size: 1rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--input-bg);
+  color: var(--text);
 }
 
-input:focus {
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
-  border-color: var(--primary);
+  border: 1px solid var(--primary);
   box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.12);
 }
 
+.password-wrap {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.password-wrap input {
+  flex: 1;
+}
+
+.toggle-password {
+  border: 1px solid var(--border);
+  background: var(--button-light);
+  color: var(--text);
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .primary-btn,
-.secondary-btn {
-  width: 100%;
+.secondary-btn,
+.logout-btn,
+.theme-toggle,
+.ghost-btn {
   border: none;
   border-radius: 10px;
-  padding: 0.85rem 1rem;
-  font-size: 1rem;
-  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.2s ease;
+  font-weight: 700;
 }
 
 .primary-btn {
+  width: 100%;
   background: var(--primary);
-  color: #fff;
-  margin-top: 0.5rem;
+  color: white;
+  padding: 0.85rem 1rem;
 }
 
-.primary-btn:hover,
-.secondary-btn:hover {
-  transform: translateY(-1px);
-}
-
-.secondary-btn {
-  background: #eff6ff;
+.secondary-btn,
+.ghost-btn,
+.theme-toggle,
+.logout-btn {
+  background: var(--button-light);
   color: var(--primary-dark);
-  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.secondary-btn.small,
+.ghost-btn {
+  padding: 0.65rem 0.9rem;
+}
+
+.send-btn {
+  background: var(--primary);
 }
 
 .message {
@@ -114,21 +175,10 @@ input:focus {
   font-weight: 600;
 }
 
-.message.error {
-  color: var(--error);
-}
+.message.error { color: var(--error); }
+.message.success { color: var(--success); }
 
-.message.success {
-  color: var(--success);
-}
-
-.page {
-  max-width: 720px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-}
-
-.page-header {
+.app-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -136,59 +186,106 @@ input:focus {
   margin-bottom: 1rem;
 }
 
-.page h1 {
-  margin: 0;
-  font-size: clamp(2rem, 6vw, 2.5rem);
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.logout-btn {
-  background: #e5edff;
-  color: var(--primary-dark);
-  border: 1px solid #cfe0ff;
-  border-radius: 10px;
-  padding: 0.6rem 1rem;
-  font-weight: 700;
-  cursor: pointer;
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
 }
 
-.page-card {
-  background: #fff;
+.panel {
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px var(--shadow);
 }
 
-.welcome {
-  margin-top: 0;
-  color: var(--success);
-  font-weight: 700;
+.contacts-box,
+.drafts-box {
+  margin-top: 1.25rem;
 }
 
-.note {
+.contacts-header {
+  margin-bottom: 0.75rem;
+}
+
+.contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+}
+
+.contact-name {
+  font-weight: 600;
+}
+
+.contact-mobile {
   color: var(--muted);
-  line-height: 1.6;
+  font-size: 0.9rem;
 }
 
-a {
-  color: var(--primary);
-  text-decoration: none;
+.composer-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
-a:hover { text-decoration: underline; }
+.composer-actions .primary-btn,
+.composer-actions .secondary-btn {
+  flex: 1;
+  min-width: 130px;
+}
 
-.result {
-  margin-top: 1rem;
-  font-weight: 700;
+.draft-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.draft-row select {
+  flex: 1;
+}
+
+.status-message {
   min-height: 1.2rem;
+  margin-top: 1rem;
+  font-weight: 600;
 }
 
-@media (max-width: 560px) {
-  .auth-shell {
-    padding: 1.5rem 1.2rem;
+.status-message.success {
+  color: var(--success);
+}
+
+.status-message.error {
+  color: var(--error);
+}
+
+@media (max-width: 760px) {
+  .dashboard {
+    grid-template-columns: 1fr;
   }
 
-  .page-header {
+  .app-header {
     flex-direction: column;
     align-items: flex-start;
   }
