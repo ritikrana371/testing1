@@ -261,8 +261,28 @@ function getSortedContacts() {
   });
 }
 
+function getSelectedContacts() {
+  const selectedValues = Array.from(contactSelect.selectedOptions).map((option) => option.value);
+  return getSortedContacts().filter((contact) => selectedValues.includes(contact.mobile));
+}
+
+function updateSelectedContactInfo() {
+  const selectedContacts = getSelectedContacts();
+
+  if (!selectedContacts.length) {
+    selectedContactInfo.textContent = "No contact selected";
+    return;
+  }
+
+  const names = selectedContacts.map((contact) => `${contact.name} (${contact.mobile})`);
+  selectedContactInfo.textContent = names.length > 3
+    ? `${names.length} contacts selected: ${names.slice(0, 3).join(", ")} ...`
+    : names.join(", ");
+}
+
 function renderContacts() {
   const searchTerm = (contactSearchInput.value || "").trim().toLowerCase();
+  const previousSelected = new Set(Array.from(contactSelect.selectedOptions).map((option) => option.value));
   const contacts = getSortedContacts().filter((contact) => {
     const name = (contact.name || "").toLowerCase();
     const mobile = (contact.mobile || "").toLowerCase();
@@ -285,28 +305,16 @@ function renderContacts() {
     const option = document.createElement("option");
     option.value = contact.mobile;
     option.textContent = `${contact.name} — ${contact.mobile}`;
+    option.selected = previousSelected.has(contact.mobile);
     contactSelect.appendChild(option);
   });
 
   contactSelect.size = Math.min(10, Math.max(contacts.length, 1));
-
-  const selectedValue = contactSelect.value || contacts[0].mobile;
-  contactSelect.value = selectedValue;
-  const currentSelection = contacts.find((contact) => contact.mobile === selectedValue);
-  selectedContactInfo.textContent = currentSelection
-    ? `${currentSelection.name} (${currentSelection.mobile})`
-    : `${contacts[0].name} (${contacts[0].mobile})`;
+  updateSelectedContactInfo();
 }
 
 contactSearchInput.addEventListener("input", renderContacts);
-contactSelect.addEventListener("change", () => {
-  const selectedValue = contactSelect.value;
-  const contacts = getSortedContacts();
-  const selected = contacts.find((contact) => contact.mobile === selectedValue);
-  selectedContactInfo.textContent = selected
-    ? `${selected.name} (${selected.mobile})`
-    : "No contact selected";
-});
+contactSelect.addEventListener("change", updateSelectedContactInfo);
 
 function renderDrafts() {
   const drafts = getDrafts();
@@ -404,11 +412,11 @@ async function copyMessage() {
 }
 
 function triggerMessage(type) {
-  const recipient = contactSelect.value;
+  const selectedContacts = getSelectedContacts();
   const text = messageText.value.trim();
 
-  if (!recipient) {
-    showStatus("Please select a recipient before sending.", "error");
+  if (!selectedContacts.length) {
+    showStatus("Please select at least one recipient before sending.", "error");
     return;
   }
 
@@ -417,26 +425,32 @@ function triggerMessage(type) {
     return;
   }
 
-  const selectedContact = getContacts().find((contact) => contact.mobile === recipient);
-
-  if (!selectedContact) {
-    showStatus("Selected contact not found.", "error");
-    return;
-  }
-
-  const mobileForSms = selectedContact.mobile.replace(/\D/g, "").replace(/^0+/, "");
-  const smsUrl = `sms:+${mobileForSms}?body=${encodeURIComponent(text)}`;
-  const whatsappUrl = `https://wa.me/${mobileForSms}?text=${encodeURIComponent(text)}`;
+  const recipientList = selectedContacts.map((contact) => ({
+    name: contact.name,
+    mobile: contact.mobile.replace(/\D/g, "").replace(/^0+/, "")
+  }));
 
   if (type === "sms") {
-    window.location.href = smsUrl;
-    showStatus(`Opening SMS to ${selectedContact.name} (${selectedContact.mobile}).`, "success");
+    recipientList.forEach((contact, index) => {
+      const smsUrl = `sms:+${contact.mobile}?body=${encodeURIComponent(text)}`;
+      setTimeout(() => {
+        window.location.href = smsUrl;
+      }, index * 250);
+    });
+
+    showStatus(`Opening SMS for ${recipientList.length} selected contact(s).`, "success");
     return;
   }
 
   if (type === "whatsapp") {
-    window.open(whatsappUrl, "_blank");
-    showStatus(`Opening WhatsApp chat with ${selectedContact.name} (${selectedContact.mobile}).`, "success");
+    recipientList.forEach((contact, index) => {
+      const whatsappUrl = `https://wa.me/${contact.mobile}?text=${encodeURIComponent(text)}`;
+      setTimeout(() => {
+        window.open(whatsappUrl, "_blank");
+      }, index * 250);
+    });
+
+    showStatus(`Opening WhatsApp for ${recipientList.length} selected contact(s).`, "success");
     return;
   }
 }
