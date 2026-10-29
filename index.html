@@ -54,9 +54,9 @@
       </div>
     </header>
 
-    <div class="dashboard">
-      <section class="panel">
-        <h2>Add Contact</h2>
+    <div class="dashboard three-column">
+      <section class="panel action-panel">
+        <h2>Manual Add User</h2>
 
         <form id="contactForm">
           <div class="form-group">
@@ -70,33 +70,38 @@
           </div>
 
           <button type="submit" class="primary-btn">Add User</button>
-          <button type="button" id="pickContactBtn" class="secondary-btn pick-contact-btn">Select from contacts</button>
         </form>
+      </section>
+
+      <section class="panel action-panel import-panel">
+        <h2>Import Contacts</h2>
 
         <div class="import-box">
-          <label for="contactFile">Import contacts from .vcf file</label>
+          <label for="contactFile">Upload .vcf or .csv file</label>
           <input id="contactFile" type="file" accept=".vcf,.csv" />
           <button type="button" id="importContactsBtn" class="secondary-btn import-btn">Import Contacts</button>
         </div>
 
-        <div class="contacts-box">
-          <div class="contacts-header">
-            <h3>Saved Contacts</h3>
-          </div>
-          <div class="contact-search-wrap">
-            <input id="contactSearch" type="text" placeholder="Search contact by name..." aria-label="Search contacts" />
-          </div>
-          <div class="contact-dropdown-wrap">
-            <select id="contactSelect" multiple size="10" aria-label="Select contacts"></select>
-          </div>
+        <div class="device-import-box">
+          <button type="button" id="pickContactBtn" class="secondary-btn full-width">Select from device contacts</button>
         </div>
       </section>
 
-      <section class="panel composer-panel">
-        <h2>Send Message</h2>
+      <section class="panel composer-panel action-panel">
+        <h2>Send Messages</h2>
 
-        <div class="form-group">
-          <label for="contactSelect">Selected Recipient(s)</label>
+        <div class="contact-search-wrap">
+          <label for="contactSearch">Search recipients</label>
+          <input id="contactSearch" type="text" placeholder="Search contact by name..." aria-label="Search contacts" />
+        </div>
+
+        <div class="contact-dropdown-wrap">
+          <label for="contactSelect">Choose recipient(s)</label>
+          <select id="contactSelect" multiple size="10" aria-label="Select contacts"></select>
+        </div>
+
+        <div class="form-group selected-contact-box">
+          <label>Selected Recipient(s)</label>
           <div id="selectedContactInfo" class="selected-contact-info">No contact selected</div>
         </div>
 
