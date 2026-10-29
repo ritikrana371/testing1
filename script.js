@@ -23,6 +23,8 @@ const contactNameInput = document.getElementById("contactName");
 const contactMobileInput = document.getElementById("contactMobile");
 const contactList = document.getElementById("contactList");
 const contactSelect = document.getElementById("contactSelect");
+const contactFileInput = document.getElementById("contactFile");
+const importContactsBtn = document.getElementById("importContactsBtn");
 const messageText = document.getElementById("messageText");
 const saveDraftBtn = document.getElementById("saveDraftBtn");
 const loadDraftBtn = document.getElementById("loadDraftBtn");
@@ -90,14 +92,128 @@ function saveDrafts(drafts) {
   localStorage.setItem(draftStorageKey, JSON.stringify(drafts));
 }
 
-function normalizePhoneForSms(mobile) {
-  const digits = mobile.replace(/\D/g, "").replace(/^0+/, "");
-  return digits ? `+${digits}` : "";
+function normalizePhone(value) {
+  if (!value) return "";
+  const cleaned = value.replace(/[^\d+]/g, "");
+  if (!cleaned) return "";
+  return cleaned.startsWith("+") ? cleaned : cleaned.replace(/^0+/, "");
 }
 
-function normalizePhoneForWhatsApp(mobile) {
-  const digits = mobile.replace(/\D/g, "").replace(/^0+/, "");
-  return digits;
+function parseVCard(text) {
+  const cards = text.split(/BEGIN:VCARD/gi);
+  const contacts = [];
+
+  cards.forEach((card) => {
+    if (!card.includes("END:VCARD")) return;
+
+    const lines = card
+      .replace(/END:VCARD.*$/is, "")
+      .split(/\r?\n/)
+      .map((line) => line.trim());
+
+    let name = "";
+    let mobile = "";
+
+    lines.forEach((line) => {
+      if (!line) return;
+
+      if (line.toUpperCase().startsWith("FN:")) {
+        name = line.replace(/^FN:/i, "").trim();
+      }
+
+      if (line.toUpperCase().startsWith("N:")) {
+        const parsedName = line.replace(/^N:/i, "").trim();
+        if (!name && parsedName) {
+          name = parsedName.split(";").filter(Boolean).reverse().join(" ").trim();
+        }
+      }
+
+      if (line.toUpperCase().startsWith("TEL")) {
+        const value = line.split(":").slice(1).join(":").trim();
+        if (!mobile) {
+          mobile = normalizePhone(value);
+        }
+      }
+    });
+
+    if (name || mobile) {
+      contacts.push({
+        name: name || "Imported Contact",
+        mobile: mobile || ""
+      });
+    }
+  });
+
+  return contacts.filter((contact) => contact.mobile);
+}
+
+function parseCSV(text) {
+  const rows = text.split(/\r?\n/).filter(Boolean);
+  const contacts = [];
+
+  rows.slice(1).forEach((row) => {
+    const cells = row.split(",");
+    const name = (cells[0] || "").trim();
+    const mobile = normalizePhone(cells[1] || cells[2] || "");
+
+    if (name && mobile) {
+      contacts.push({ name, mobile });
+    }
+  });
+
+  return contacts;
+}
+
+function mergeImportedContacts(newContacts) {
+  const existing = getContacts();
+  const merged = [...existing];
+
+  newContacts.forEach((contact) => {
+    const exists = merged.some((item) => item.mobile === contact.mobile || item.name === contact.name);
+    if (!exists) {
+      merged.push(contact);
+    }
+  });
+
+  saveContacts(merged);
+  renderContacts();
+}
+
+function importContactsFromFile() {
+  const file = contactFileInput.files[0];
+
+  if (!file) {
+    showStatus("Please select a .vcf or .csv file first.", "error");
+    return;
+  }
+
+  const fileName = file.name.toLowerCase();
+
+  file.text()
+    .then((content) => {
+      let contacts = [];
+
+      if (fileName.endsWith(".vcf")) {
+        contacts = parseVCard(content);
+      } else if (fileName.endsWith(".csv")) {
+        contacts = parseCSV(content);
+      } else {
+        showStatus("Unsupported file type. Please upload a .vcf or .csv file.", "error");
+        return;
+      }
+
+      if (!contacts.length) {
+        showStatus("No valid contacts were found in the file.", "error");
+        return;
+      }
+
+      mergeImportedContacts(contacts);
+      contactFileInput.value = "";
+      showStatus(`${contacts.length} contact(s) imported successfully.`, "success");
+    })
+    .catch(() => {
+      showStatus("Unable to read the selected file. Please try again.", "error");
+    });
 }
 
 function renderContacts() {
@@ -247,8 +363,9 @@ function triggerMessage(type) {
     return;
   }
 
-  const smsUrl = `sms:${normalizePhoneForSms(selectedContact.mobile)}?body=${encodeURIComponent(text)}`;
-  const whatsappUrl = `https://wa.me/${normalizePhoneForWhatsApp(selectedContact.mobile)}?text=${encodeURIComponent(text)}`;
+  const mobileForSms = selectedContact.mobile.replace(/\D/g, "").replace(/^0+/, "");
+  const smsUrl = `sms:+${mobileForSms}?body=${encodeURIComponent(text)}`;
+  const whatsappUrl = `https://wa.me/${mobileForSms}?text=${encodeURIComponent(text)}`;
 
   if (type === "sms") {
     window.location.href = smsUrl;
@@ -302,6 +419,7 @@ themeToggleBtn.addEventListener("click", () => {
 });
 
 contactForm.addEventListener("submit", addContact);
+importContactsBtn.addEventListener("click", importContactsFromFile);
 saveDraftBtn.addEventListener("click", saveDraft);
 loadDraftBtn.addEventListener("click", loadDraft);
 copyMessageBtn.addEventListener("click", copyMessage);
