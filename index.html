@@ -40,7 +40,8 @@
     }
 
     .auth-shell.hidden,
-    .content.hidden {
+    .content.hidden,
+    .hidden {
       display: none;
     }
 
@@ -234,12 +235,14 @@
       <button id="testButton" type="button" class="secondary-btn">Run test</button>
       <div id="result" class="result" role="status" aria-live="polite"></div>
 
-      <p>
-        <a href="sms:+917355289961?body=Hello!%20I%20have%20an%20inquiry%20from%20your%20website.">Send SMS to Support</a>
-      </p>
-      <p>
-        <a href="https://wa.me/917355289961?text=Hi!%20I'm%20interested%20in%20Credflex." target="_blank" rel="noopener noreferrer">Chat with us on WhatsApp</a>
-      </p>
+      <div id="messageLinks" class="hidden">
+        <p>
+          <a href="sms:+917355289961?body=Hello!%20I%20have%20an%20inquiry%20from%20your%20website.">Send SMS to Support</a>
+        </p>
+        <p>
+          <a href="https://wa.me/917355289961?text=Hi!%20I'm%20interested%20in%20Credflex." target="_blank" rel="noopener noreferrer">Chat with us on WhatsApp</a>
+        </p>
+      </div>
     </div>
   </main>
 
@@ -260,6 +263,7 @@
     const userNameLabel = document.getElementById('userNameLabel');
     const result = document.getElementById('result');
     const testButton = document.getElementById('testButton');
+    const messageLinks = document.getElementById('messageLinks');
 
     const sessionKey = 'participant-access-session';
 
@@ -276,6 +280,7 @@
     function showLogin() {
       loginScreen.classList.remove('hidden');
       contentPage.classList.add('hidden');
+      messageLinks.classList.add('hidden');
       usernameInput.focus();
     }
 
@@ -284,6 +289,7 @@
       contentPage.classList.remove('hidden');
       userNameLabel.textContent = username;
       result.textContent = '';
+      messageLinks.classList.remove('hidden');
       sessionStorage.setItem(sessionKey, 'true');
     }
 
