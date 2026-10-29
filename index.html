@@ -3,29 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Testing Page</title>
+  <title>Participant Access</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
-    button { padding: 0.6rem 1rem; }
-    #result { margin-top: 1rem; font-weight: bold; }
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --primary: #1d4ed8;
+      --primary-dark: #1e3a8a;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #dbe3f0;
+      --success: #166534;
+      --error: #b91c1c;
+      --shadow: rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #eef4ff 0%, #f8fafc 100%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
+    }
+
+    .auth-shell {
+      width: min(92vw, 420px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px var(--shadow);
+      padding: 2rem;
+    }
+
+    .auth-shell.hidden,
+    .content.hidden {
+      display: none;
+    }
+
+    .brand {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      color: var(--primary-dark);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin-bottom: 0.45rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.8rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.12);
+    }
+
+    .primary-btn,
+    .secondary-btn {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    .primary-btn {
+      background: var(--primary);
+      color: #fff;
+      margin-top: 0.5rem;
+    }
+
+    .primary-btn:hover,
+    .secondary-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .secondary-btn {
+      background: #eff6ff;
+      color: var(--primary-dark);
+      margin-top: 0.75rem;
+    }
+
+    .message {
+      min-height: 1.2rem;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .message.error {
+      color: var(--error);
+    }
+
+    .message.success {
+      color: var(--success);
+    }
+
+    .page {
+      max-width: 720px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .page h1 {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 2.5rem);
+    }
+
+    .logout-btn {
+      background: #e5edff;
+      color: var(--primary-dark);
+      border: 1px solid #cfe0ff;
+      border-radius: 10px;
+      padding: 0.6rem 1rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .page-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    }
+
+    .welcome {
+      margin-top: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .note {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .result {
+      margin-top: 1rem;
+      font-weight: 700;
+      min-height: 1.2rem;
+    }
+
+    @media (max-width: 560px) {
+      .auth-shell {
+        padding: 1.5rem 1.2rem;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Testing Page</h1>
-  <p>This page is ready for testing.</p>
-  <button id="testButton" type="button">Run test</button>
-  <div id="result" role="status" aria-live="polite"></div>
-  <a href="sms:+917355289961?body=Hello!%20I%20have%20an%20inquiry%20from%20your%20website.">
-  Send SMS to Support
-</a><br>
-<a href="https://wa.me/917355289961?text=Hi!%20I'm%20interested%20in%20Credflex." target="_blank">
-  Chat with us on WhatsApp
-</a>
+  <section id="loginScreen" class="auth-shell" aria-live="polite">
+    <h1 class="brand">Participant Access</h1>
+    <p class="subtitle">Please sign in to access this testing page.</p>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" placeholder="Enter username" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+      </div>
+
+      <button type="submit" class="primary-btn">Login</button>
+      <div id="loginMessage" class="message" aria-live="assertive"></div>
+    </form>
+  </section>
+
+  <main id="contentPage" class="page hidden" aria-live="polite">
+    <div class="page-header">
+      <h1>Testing Page</h1>
+      <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+    </div>
+
+    <div class="page-card">
+      <p class="welcome">Welcome, <span id="userNameLabel">Participant</span>!</p>
+      <p class="note">This page is ready for testing. Access is restricted to approved participants only.</p>
+
+      <button id="testButton" type="button" class="secondary-btn">Run test</button>
+      <div id="result" class="result" role="status" aria-live="polite"></div>
+
+      <p>
+        <a href="sms:+917355289961?body=Hello!%20I%20have%20an%20inquiry%20from%20your%20website.">Send SMS to Support</a>
+      </p>
+      <p>
+        <a href="https://wa.me/917355289961?text=Hi!%20I'm%20interested%20in%20Credflex." target="_blank" rel="noopener noreferrer">Chat with us on WhatsApp</a>
+      </p>
+    </div>
+  </main>
 
   <script>
-    document.getElementById('testButton').addEventListener('click', () => {
-      document.getElementById('result').textContent = 'Test passed';
+    const validUsers = {
+      participant: 'credflex123',
+      admin: 'admin@123',
+      tester: 'test@123'
+    };
+
+    const loginScreen = document.getElementById('loginScreen');
+    const contentPage = document.getElementById('contentPage');
+    const loginForm = document.getElementById('loginForm');
+    const loginMessage = document.getElementById('loginMessage');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userNameLabel = document.getElementById('userNameLabel');
+    const result = document.getElementById('result');
+    const testButton = document.getElementById('testButton');
+
+    const sessionKey = 'participant-access-session';
+
+    function showMessage(el, text, type) {
+      el.textContent = text;
+      el.className = 'message';
+      if (type) el.classList.add(type);
+    }
+
+    function isLoggedIn() {
+      return sessionStorage.getItem(sessionKey) === 'true';
+    }
+
+    function showLogin() {
+      loginScreen.classList.remove('hidden');
+      contentPage.classList.add('hidden');
+      usernameInput.focus();
+    }
+
+    function showContent(username) {
+      loginScreen.classList.add('hidden');
+      contentPage.classList.remove('hidden');
+      userNameLabel.textContent = username;
+      result.textContent = '';
+      sessionStorage.setItem(sessionKey, 'true');
+    }
+
+    loginForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!username || !password) {
+        showMessage(loginMessage, 'Please enter both username and password.', 'error');
+        return;
+      }
+
+      if (validUsers[username] && validUsers[username] === password) {
+        showContent(username);
+        loginForm.reset();
+        showMessage(loginMessage, '', '');
+      } else {
+        showMessage(loginMessage, 'Invalid username or password. Please try again.', 'error');
+        loginForm.reset();
+      }
     });
+
+    logoutBtn.addEventListener('click', () => {
+      sessionStorage.removeItem(sessionKey);
+      showLogin();
+      showMessage(loginMessage, 'You have been logged out.', 'success');
+    });
+
+    testButton.addEventListener('click', () => {
+      result.textContent = 'Test passed';
+    });
+
+    if (isLoggedIn()) {
+      showContent('Participant');
+    } else {
+      showLogin();
+    }
   </script>
 </body>
 </html>
