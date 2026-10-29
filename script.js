@@ -105,6 +105,17 @@ function normalizePhoneForIntent(value) {
   return value.replace(/[^\d+]/g, "").replace(/^0+/, "") || "";
 }
 
+function getSelectedContacts() {
+  const selected = [...contactSelect.selectedOptions].map((option) => option.value).filter(Boolean);
+
+  if (selected.length) {
+    const contacts = getContacts();
+    return contacts.filter((contact) => selected.includes(contact.mobile));
+  }
+
+  return getContacts();
+}
+
 function isIOSDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -388,6 +399,49 @@ async function copyMessage() {
   }
 }
 
+async function triggerSmsShare() {
+  const text = messageText.value.trim();
+
+  if (!text) {
+    showStatus("Message body cannot be empty.", "error");
+    return;
+  }
+
+  const selectedContacts = getSelectedContacts();
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Credflex Messaging Panel",
+        text
+      });
+      showStatus("Opening your device share sheet for SMS.", "success");
+      return;
+    } catch (error) {
+      if (error && error.name !== "AbortError") {
+        console.error(error);
+      }
+    }
+  }
+
+  if (!selectedContacts.length) {
+    showStatus("Please select a contact before sending SMS.", "error");
+    return;
+  }
+
+  const primaryContact = selectedContacts[0];
+  const mobileNumber = normalizePhoneForIntent(primaryContact.mobile);
+
+  if (!mobileNumber) {
+    showStatus("Selected contact does not contain a valid phone number.", "error");
+    return;
+  }
+
+  const smsUrl = `sms:${mobileNumber}?body=${encodeURIComponent(text)}`;
+  window.location.href = smsUrl;
+  showStatus(`Opening SMS to ${primaryContact.name}.`, "success");
+}
+
 function triggerMessage(type) {
   const text = messageText.value.trim();
 
@@ -396,36 +450,21 @@ function triggerMessage(type) {
     return;
   }
 
-  const contacts = getContacts();
-  const selectedRecipient = contactSelect.value;
-  const selectedContact = contacts.find((contact) => contact.mobile === selectedRecipient) || contacts[0];
-
   if (type === "sms") {
-    const collectedNumbers = contacts
-      .map((contact) => normalizePhoneForIntent(contact.mobile))
-      .filter(Boolean);
-
-    const fallbackNumber = selectedContact ? normalizePhoneForIntent(selectedContact.mobile) : "";
-    const recipients = collectedNumbers.length ? collectedNumbers : fallbackNumber ? [fallbackNumber] : [];
-
-    if (!recipients.length) {
-      showStatus("Please add at least one contact before sending an SMS.", "error");
-      return;
-    }
-
-    const separator = isIOSDevice() ? ";" : ",";
-    const querySeparator = isIOSDevice() ? "&body=" : "?body=";
-    const smsUrl = `sms:${recipients.join(separator)}${querySeparator}${encodeURIComponent(text)}`;
-
-    window.location.href = smsUrl;
-    showStatus(`Opening SMS to ${recipients.length} contact(s).`, "success");
+    triggerSmsShare();
     return;
   }
 
   if (type === "whatsapp") {
+    const selectedContact = getSelectedContacts()[0] || getContacts()[0];
     const targetNumber = selectedContact ? normalizePhoneForIntent(selectedContact.mobile) : "917355289961";
-    const whatsappUrl = `https://wa.me/${targetNumber}?text=${encodeURIComponent(text)}`;
 
+    if (!targetNumber) {
+      showStatus("Please add a valid contact before sending WhatsApp.", "error");
+      return;
+    }
+
+    const whatsappUrl = `https://wa.me/${targetNumber}?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
     showStatus(`Opening WhatsApp chat with ${selectedContact ? selectedContact.name : "support"}.`, "success");
   }
