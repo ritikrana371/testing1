@@ -22,8 +22,9 @@ const contactForm = document.getElementById("contactForm");
 const contactNameInput = document.getElementById("contactName");
 const contactMobileInput = document.getElementById("contactMobile");
 const pickContactBtn = document.getElementById("pickContactBtn");
-const contactList = document.getElementById("contactList");
+const contactSearchInput = document.getElementById("contactSearch");
 const contactSelect = document.getElementById("contactSelect");
+const selectedContactInfo = document.getElementById("selectedContactInfo");
 const contactFileInput = document.getElementById("contactFile");
 const importContactsBtn = document.getElementById("importContactsBtn");
 const messageText = document.getElementById("messageText");
@@ -252,36 +253,60 @@ async function pickContactFromDevice() {
   }
 }
 
-function renderContacts() {
-  const contacts = getContacts();
-  contactList.innerHTML = "";
+function getSortedContacts() {
+  return getContacts().sort((a, b) => {
+    const nameA = (a.name || "").toLowerCase();
+    const nameB = (b.name || "").toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+}
 
-  if (contacts.length === 0) {
-    contactList.innerHTML = "<li class='contact-item'>No contacts added yet.</li>";
+function renderContacts() {
+  const searchTerm = (contactSearchInput.value || "").trim().toLowerCase();
+  const contacts = getSortedContacts().filter((contact) => {
+    const name = (contact.name || "").toLowerCase();
+    const mobile = (contact.mobile || "").toLowerCase();
+    return name.includes(searchTerm) || mobile.includes(searchTerm);
+  });
+
+  contactSelect.innerHTML = "";
+
+  if (!contacts.length) {
+    const placeholder = document.createElement("option");
+    placeholder.textContent = "No contact match found";
+    placeholder.disabled = true;
+    contactSelect.appendChild(placeholder);
+    contactSelect.size = 1;
+    selectedContactInfo.textContent = "No contact selected";
     return;
   }
 
-  contactSelect.innerHTML = '<option value="">Choose a contact</option>';
-
   contacts.forEach((contact) => {
-    const li = document.createElement("li");
-    li.className = "contact-item";
-
-    li.innerHTML = `
-      <div>
-        <div class="contact-name">${contact.name}</div>
-        <div class="contact-mobile">${contact.mobile}</div>
-      </div>
-    `;
-
-    contactList.appendChild(li);
-
     const option = document.createElement("option");
     option.value = contact.mobile;
-    option.textContent = `${contact.name} (${contact.mobile})`;
+    option.textContent = `${contact.name} — ${contact.mobile}`;
     contactSelect.appendChild(option);
   });
+
+  contactSelect.size = Math.min(10, Math.max(contacts.length, 1));
+
+  const selectedValue = contactSelect.value || contacts[0].mobile;
+  contactSelect.value = selectedValue;
+  const currentSelection = contacts.find((contact) => contact.mobile === selectedValue);
+  selectedContactInfo.textContent = currentSelection
+    ? `${currentSelection.name} (${currentSelection.mobile})`
+    : `${contacts[0].name} (${contacts[0].mobile})`;
 }
+
+contactSearchInput.addEventListener("input", renderContacts);
+contactSelect.addEventListener("change", () => {
+  const selectedValue = contactSelect.value;
+  const contacts = getSortedContacts();
+  const selected = contacts.find((contact) => contact.mobile === selectedValue);
+  selectedContactInfo.textContent = selected
+    ? `${selected.name} (${selected.mobile})`
+    : "No contact selected";
+});
 
 function renderDrafts() {
   const drafts = getDrafts();

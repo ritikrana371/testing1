@@ -247,7 +247,44 @@ textarea:focus {
   margin-bottom: 0.75rem;
 }
 
-.contact-list {
+.contact-search-wrap {
+  margin-bottom: 0.75rem;
+}
+
+.contact-dropdown-wrap {
+  position: relative;
+}
+
+#contactSelect {
+  min-height: 240px;
+  width: 100%;
+  background: var(--input-bg);
+  color: var(--text);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+#contactSelect option {
+  padding: 0.7rem 0.8rem;
+  border-radius: 8px;
+  margin: 0.15rem 0;
+}
+
+.selected-contact-info {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 0.8rem 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.contacts-list {
   list-style: none;
   padding: 0;
   margin: 0;
