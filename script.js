@@ -22,9 +22,8 @@ const contactForm = document.getElementById("contactForm");
 const contactNameInput = document.getElementById("contactName");
 const contactMobileInput = document.getElementById("contactMobile");
 const pickContactBtn = document.getElementById("pickContactBtn");
-const contactSearchInput = document.getElementById("contactSearch");
+const contactList = document.getElementById("contactList");
 const contactSelect = document.getElementById("contactSelect");
-const selectedContactInfo = document.getElementById("selectedContactInfo");
 const contactFileInput = document.getElementById("contactFile");
 const importContactsBtn = document.getElementById("importContactsBtn");
 const messageText = document.getElementById("messageText");
@@ -99,6 +98,16 @@ function normalizePhone(value) {
   const cleaned = value.replace(/[^\d+]/g, "");
   if (!cleaned) return "";
   return cleaned.startsWith("+") ? cleaned : cleaned.replace(/^0+/, "");
+}
+
+function normalizePhoneForIntent(value) {
+  if (!value) return "";
+  return value.replace(/[^\d+]/g, "").replace(/^0+/, "") || "";
+}
+
+function isIOSDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
 function parseVCard(text) {
@@ -253,68 +262,36 @@ async function pickContactFromDevice() {
   }
 }
 
-function getSortedContacts() {
-  return getContacts().sort((a, b) => {
-    const nameA = (a.name || "").toLowerCase();
-    const nameB = (b.name || "").toLowerCase();
-    return nameA.localeCompare(nameB);
-  });
-}
-
-function getSelectedContacts() {
-  const selectedValues = Array.from(contactSelect.selectedOptions).map((option) => option.value);
-  return getSortedContacts().filter((contact) => selectedValues.includes(contact.mobile));
-}
-
-function updateSelectedContactInfo() {
-  const selectedContacts = getSelectedContacts();
-
-  if (!selectedContacts.length) {
-    selectedContactInfo.textContent = "No contact selected";
-    return;
-  }
-
-  const names = selectedContacts.map((contact) => `${contact.name} (${contact.mobile})`);
-  selectedContactInfo.textContent = names.length > 3
-    ? `${names.length} contacts selected: ${names.slice(0, 3).join(", ")} ...`
-    : names.join(", ");
-}
-
 function renderContacts() {
-  const searchTerm = (contactSearchInput.value || "").trim().toLowerCase();
-  const previousSelected = new Set(Array.from(contactSelect.selectedOptions).map((option) => option.value));
-  const contacts = getSortedContacts().filter((contact) => {
-    const name = (contact.name || "").toLowerCase();
-    const mobile = (contact.mobile || "").toLowerCase();
-    return name.includes(searchTerm) || mobile.includes(searchTerm);
-  });
+  const contacts = getContacts();
+  contactList.innerHTML = "";
 
-  contactSelect.innerHTML = "";
-
-  if (!contacts.length) {
-    const placeholder = document.createElement("option");
-    placeholder.textContent = "No contact match found";
-    placeholder.disabled = true;
-    contactSelect.appendChild(placeholder);
-    contactSelect.size = 1;
-    selectedContactInfo.textContent = "No contact selected";
+  if (contacts.length === 0) {
+    contactList.innerHTML = "<li class='contact-item'>No contacts added yet.</li>";
     return;
   }
+
+  contactSelect.innerHTML = '<option value="">Choose a contact</option>';
 
   contacts.forEach((contact) => {
+    const li = document.createElement("li");
+    li.className = "contact-item";
+
+    li.innerHTML = `
+      <div>
+        <div class="contact-name">${contact.name}</div>
+        <div class="contact-mobile">${contact.mobile}</div>
+      </div>
+    `;
+
+    contactList.appendChild(li);
+
     const option = document.createElement("option");
     option.value = contact.mobile;
-    option.textContent = `${contact.name} — ${contact.mobile}`;
-    option.selected = previousSelected.has(contact.mobile);
+    option.textContent = `${contact.name} (${contact.mobile})`;
     contactSelect.appendChild(option);
   });
-
-  contactSelect.size = Math.min(10, Math.max(contacts.length, 1));
-  updateSelectedContactInfo();
 }
-
-contactSearchInput.addEventListener("input", renderContacts);
-contactSelect.addEventListener("change", updateSelectedContactInfo);
 
 function renderDrafts() {
   const drafts = getDrafts();
@@ -412,46 +389,45 @@ async function copyMessage() {
 }
 
 function triggerMessage(type) {
-  const selectedContacts = getSelectedContacts();
   const text = messageText.value.trim();
-
-  if (!selectedContacts.length) {
-    showStatus("Please select at least one recipient before sending.", "error");
-    return;
-  }
 
   if (!text) {
     showStatus("Message body cannot be empty.", "error");
     return;
   }
 
-  const recipientList = selectedContacts.map((contact) => ({
-    name: contact.name,
-    mobile: contact.mobile.replace(/\D/g, "").replace(/^0+/, "")
-  }));
+  const contacts = getContacts();
+  const selectedRecipient = contactSelect.value;
+  const selectedContact = contacts.find((contact) => contact.mobile === selectedRecipient) || contacts[0];
 
   if (type === "sms") {
-    recipientList.forEach((contact, index) => {
-      const smsUrl = `sms:+${contact.mobile}?body=${encodeURIComponent(text)}`;
-      setTimeout(() => {
-        window.location.href = smsUrl;
-      }, index * 250);
-    });
+    const collectedNumbers = contacts
+      .map((contact) => normalizePhoneForIntent(contact.mobile))
+      .filter(Boolean);
 
-    showStatus(`Opening SMS for ${recipientList.length} selected contact(s).`, "success");
+    const fallbackNumber = selectedContact ? normalizePhoneForIntent(selectedContact.mobile) : "";
+    const recipients = collectedNumbers.length ? collectedNumbers : fallbackNumber ? [fallbackNumber] : [];
+
+    if (!recipients.length) {
+      showStatus("Please add at least one contact before sending an SMS.", "error");
+      return;
+    }
+
+    const separator = isIOSDevice() ? ";" : ",";
+    const querySeparator = isIOSDevice() ? "&body=" : "?body=";
+    const smsUrl = `sms:${recipients.join(separator)}${querySeparator}${encodeURIComponent(text)}`;
+
+    window.location.href = smsUrl;
+    showStatus(`Opening SMS to ${recipients.length} contact(s).`, "success");
     return;
   }
 
   if (type === "whatsapp") {
-    recipientList.forEach((contact, index) => {
-      const whatsappUrl = `https://wa.me/${contact.mobile}?text=${encodeURIComponent(text)}`;
-      setTimeout(() => {
-        window.open(whatsappUrl, "_blank");
-      }, index * 250);
-    });
+    const targetNumber = selectedContact ? normalizePhoneForIntent(selectedContact.mobile) : "917355289961";
+    const whatsappUrl = `https://wa.me/${targetNumber}?text=${encodeURIComponent(text)}`;
 
-    showStatus(`Opening WhatsApp for ${recipientList.length} selected contact(s).`, "success");
-    return;
+    window.open(whatsappUrl, "_blank");
+    showStatus(`Opening WhatsApp chat with ${selectedContact ? selectedContact.name : "support"}.`, "success");
   }
 }
 
