@@ -41,7 +41,10 @@
 
   <main id="contentPage" class="page hidden" aria-live="polite">
     <header class="app-header">
-      <h1>Credflex Messaging Panel</h1>
+      <div class="header-title-wrap">
+        <h1>Credflex Messaging Panel</h1>
+        <div class="welcome-text">Welcome, <span id="userNameLabel">Participant</span></div>
+      </div>
 
       <div class="header-actions">
         <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">
@@ -95,7 +98,8 @@
         <div class="composer-actions">
           <button type="button" id="saveDraftBtn" class="secondary-btn small">Save Draft</button>
           <button type="button" id="copyMessageBtn" class="secondary-btn small">Copy</button>
-          <button type="button" id="sendMessageBtn" class="primary-btn small send-btn">Send Message</button>
+          <button type="button" id="sendSmsBtn" class="primary-btn small send-btn">Send SMS</button>
+          <button type="button" id="sendWhatsAppBtn" class="primary-btn small send-btn">Send WhatsApp</button>
         </div>
 
         <div class="drafts-box">
