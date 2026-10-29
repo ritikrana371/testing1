@@ -22,8 +22,9 @@ const contactForm = document.getElementById("contactForm");
 const contactNameInput = document.getElementById("contactName");
 const contactMobileInput = document.getElementById("contactMobile");
 const pickContactBtn = document.getElementById("pickContactBtn");
-const contactList = document.getElementById("contactList");
+const contactSearchInput = document.getElementById("contactSearch");
 const contactSelect = document.getElementById("contactSelect");
+const selectedContactInfo = document.getElementById("selectedContactInfo");
 const contactFileInput = document.getElementById("contactFile");
 const importContactsBtn = document.getElementById("importContactsBtn");
 const messageText = document.getElementById("messageText");
@@ -103,17 +104,6 @@ function normalizePhone(value) {
 function normalizePhoneForIntent(value) {
   if (!value) return "";
   return value.replace(/[^\d+]/g, "").replace(/^0+/, "") || "";
-}
-
-function getSelectedContacts() {
-  const selected = [...contactSelect.selectedOptions].map((option) => option.value).filter(Boolean);
-
-  if (selected.length) {
-    const contacts = getContacts();
-    return contacts.filter((contact) => selected.includes(contact.mobile));
-  }
-
-  return getContacts();
 }
 
 function isIOSDevice() {
@@ -273,36 +263,60 @@ async function pickContactFromDevice() {
   }
 }
 
-function renderContacts() {
-  const contacts = getContacts();
-  contactList.innerHTML = "";
+function getSelectedContacts() {
+  const selectedValues = Array.from(contactSelect.selectedOptions).map((option) => option.value);
+  return getContacts().filter((contact) => selectedValues.includes(contact.mobile));
+}
 
-  if (contacts.length === 0) {
-    contactList.innerHTML = "<li class='contact-item'>No contacts added yet.</li>";
+function updateSelectedContactInfo() {
+  const selectedContacts = getSelectedContacts();
+
+  if (!selectedContacts.length) {
+    selectedContactInfo.textContent = "No contact selected";
     return;
   }
 
-  contactSelect.innerHTML = '<option value="">Choose a contact</option>';
+  const names = selectedContacts.map((contact) => `${contact.name} (${contact.mobile})`);
+  selectedContactInfo.textContent = names.length > 3
+    ? `${names.length} contacts selected: ${names.slice(0, 3).join(", ")} ...`
+    : names.join(", ");
+}
+
+function renderContacts() {
+  const searchTerm = (contactSearchInput.value || "").trim().toLowerCase();
+  const previousSelected = new Set(Array.from(contactSelect.selectedOptions).map((option) => option.value));
+  const contacts = getContacts().filter((contact) => {
+    const name = (contact.name || "").toLowerCase();
+    const mobile = (contact.mobile || "").toLowerCase();
+    return name.includes(searchTerm) || mobile.includes(searchTerm);
+  });
+
+  contactSelect.innerHTML = "";
+
+  if (!contacts.length) {
+    const placeholder = document.createElement("option");
+    placeholder.textContent = "No contact match found";
+    placeholder.disabled = true;
+    contactSelect.appendChild(placeholder);
+    contactSelect.size = 1;
+    selectedContactInfo.textContent = "No contact selected";
+    return;
+  }
 
   contacts.forEach((contact) => {
-    const li = document.createElement("li");
-    li.className = "contact-item";
-
-    li.innerHTML = `
-      <div>
-        <div class="contact-name">${contact.name}</div>
-        <div class="contact-mobile">${contact.mobile}</div>
-      </div>
-    `;
-
-    contactList.appendChild(li);
-
     const option = document.createElement("option");
     option.value = contact.mobile;
-    option.textContent = `${contact.name} (${contact.mobile})`;
+    option.textContent = `${contact.name} — ${contact.mobile}`;
+    option.selected = previousSelected.has(contact.mobile);
     contactSelect.appendChild(option);
   });
+
+  contactSelect.size = Math.min(10, Math.max(contacts.length, 1));
+  updateSelectedContactInfo();
 }
+
+contactSearchInput.addEventListener("input", renderContacts);
+contactSelect.addEventListener("change", updateSelectedContactInfo);
 
 function renderDrafts() {
   const drafts = getDrafts();
@@ -399,51 +413,43 @@ async function copyMessage() {
   }
 }
 
-async function triggerSmsShare() {
-  const text = messageText.value.trim();
-
-  if (!text) {
-    showStatus("Message body cannot be empty.", "error");
+function triggerSMSToContactIndex(index, contacts, messageTextValue) {
+  if (index >= contacts.length) {
+    showStatus("Completed sending to all selected contacts.", "success");
     return;
   }
 
-  const selectedContacts = getSelectedContacts();
+  const contact = contacts[index];
+  const cleanMobile = normalizePhoneForIntent(contact.mobile);
 
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: "Credflex Messaging Panel",
-        text
-      });
-      showStatus("Opening your device share sheet for SMS.", "success");
-      return;
-    } catch (error) {
-      if (error && error.name !== "AbortError") {
-        console.error(error);
-      }
-    }
-  }
-
-  if (!selectedContacts.length) {
-    showStatus("Please select a contact before sending SMS.", "error");
+  if (!cleanMobile) {
+    triggerSMSToContactIndex(index + 1, contacts, messageTextValue);
     return;
   }
 
-  const primaryContact = selectedContacts[0];
-  const mobileNumber = normalizePhoneForIntent(primaryContact.mobile);
+  const isIOS = isIOSDevice();
+  const queryParam = isIOS ? "&body=" : "?body=";
+  const smsUrl = `sms:${cleanMobile}${queryParam}${encodeURIComponent(messageTextValue)}`;
 
-  if (!mobileNumber) {
-    showStatus("Selected contact does not contain a valid phone number.", "error");
+  const proceed = window.confirm(`Send SMS to ${contact.name} (${contact.mobile})? (${index + 1}/${contacts.length})`);
+
+  if (!proceed) {
+    showStatus("SMS sending cancelled.", "error");
     return;
   }
 
-  const smsUrl = `sms:${mobileNumber}?body=${encodeURIComponent(text)}`;
+  showStatus(`Opening SMS to ${contact.name}.`, "success");
   window.location.href = smsUrl;
-  showStatus(`Opening SMS to ${primaryContact.name}.`, "success");
 }
 
 function triggerMessage(type) {
+  const selectedContacts = getSelectedContacts();
   const text = messageText.value.trim();
+
+  if (!selectedContacts.length) {
+    showStatus("Please select at least one recipient before sending.", "error");
+    return;
+  }
 
   if (!text) {
     showStatus("Message body cannot be empty.", "error");
@@ -451,22 +457,22 @@ function triggerMessage(type) {
   }
 
   if (type === "sms") {
-    triggerSmsShare();
+    triggerSMSToContactIndex(0, selectedContacts, text);
     return;
   }
 
   if (type === "whatsapp") {
-    const selectedContact = getSelectedContacts()[0] || getContacts()[0];
-    const targetNumber = selectedContact ? normalizePhoneForIntent(selectedContact.mobile) : "917355289961";
+    const contact = selectedContacts[0];
+    const mobile = contact ? normalizePhoneForIntent(contact.mobile) : "";
 
-    if (!targetNumber) {
-      showStatus("Please add a valid contact before sending WhatsApp.", "error");
+    if (!mobile) {
+      showStatus("Please select a valid contact before sending WhatsApp.", "error");
       return;
     }
 
-    const whatsappUrl = `https://wa.me/${targetNumber}?text=${encodeURIComponent(text)}`;
+    const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, "_blank");
-    showStatus(`Opening WhatsApp chat with ${selectedContact ? selectedContact.name : "support"}.`, "success");
+    showStatus(`Opening WhatsApp chat with ${contact.name}.`, "success");
   }
 }
 
