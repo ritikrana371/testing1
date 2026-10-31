@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-theme="light" data-page="dashboard">
+  <header class="page-header">
+    <div class="brand-wrap">
+      <h1>Credflex Messaging Panel</h1>
+    </div>
+
+    <nav class="top-nav" aria-label="Main navigation">
+      <a href="dashboard.html" class="nav-link active">Dashboard</a>
+      <a href="add-contact.html" class="nav-link">Add Contact</a>
+      <a href="import-contacts.html" class="nav-link">Import Contacts</a>
+      <a href="send-message.html" class="nav-link">Send Messages</a>
+      <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+    </nav>
+  </header>
+
+  <main class="page dashboard-page">
+    <section class="page-card">
+      <h2>Welcome back</h2>
+      <p class="dashboard-subtitle">Manage your contacts, message drafts, and send actions from one place.</p>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-label">Saved Contacts</span>
+          <strong id="contactCount">0</strong>
+        </article>
+
+        <article class="stat-card">
+          <span class="stat-label">Drafts</span>
+          <strong id="draftCount">0</strong>
+        </article>
+      </div>
+
+      <div class="dashboard-actions">
+        <a href="add-contact.html" class="primary-btn dashboard-link">Add Contact</a>
+        <a href="import-contacts.html" class="secondary-btn dashboard-link">Import Contacts</a>
+        <a href="send-message.html" class="secondary-btn dashboard-link">Send Messages</a>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
