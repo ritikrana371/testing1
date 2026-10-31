@@ -77,16 +77,6 @@
             <h3>Saved Contacts</h3>
           </div>
 
-          <div class="search-box">
-            <label for="contactSearch" class="sr-only">Search contacts</label>
-            <input
-              id="contactSearch"
-              type="search"
-              placeholder="Search contacts by name or number"
-              aria-label="Search contacts by name or number"
-            />
-          </div>
-
           <div id="selectedContactInfo" class="selected-contact-info">No contact selected</div>
           <ul id="contactList" class="contact-list"></ul>
         </div>
@@ -94,6 +84,16 @@
 
       <section class="panel composer-panel">
         <h2>Send Message</h2>
+
+        <div class="form-group">
+          <label for="contactSearch">Search Recipient</label>
+          <input
+            id="contactSearch"
+            type="search"
+            placeholder="Search by name or mobile number"
+            aria-label="Search recipients by name or mobile number"
+          />
+        </div>
 
         <div class="form-group">
           <label for="contactSelect">Select Recipient(s)</label>
