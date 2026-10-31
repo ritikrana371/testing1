@@ -10,9 +10,7 @@ const draftStorageKey = "saved-drafts";
 const themeStorageKey = "app-theme";
 
 function bindIfExists(element, eventName, handler) {
-  if (element) {
-    element.addEventListener(eventName, handler);
-  }
+  if (element) element.addEventListener(eventName, handler);
 }
 
 function isLoggedIn() {
@@ -68,14 +66,25 @@ function applyTheme(theme) {
 
 function normalizePhone(value) {
   if (!value) return "";
-  const cleaned = value.replace(/[^\d+]/g, "");
-  if (!cleaned) return "";
-  return cleaned.startsWith("+") ? cleaned : cleaned.replace(/^0+/, "");
+  const cleaned = value.trim();
+  const digitsOnly = cleaned.replace(/\D/g, "");
+  if (!digitsOnly) return "";
+  const normalized = cleaned.startsWith("+") ? `+${digitsOnly}` : digitsOnly.replace(/^0+/, "");
+  return normalized;
+}
+
+function isValidPhoneNumber(value) {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return false;
+  if (!/^[\d+()\-\s.]+$/.test(trimmed)) return false;
+
+  const digits = trimmed.replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 15;
 }
 
 function normalizePhoneForIntent(value) {
-  if (!value) return "";
-  return value.replace(/[^\d+]/g, "").replace(/^0+/, "") || "";
+  const normalized = normalizePhone(value);
+  return normalized.replace(/\+/g, "") || "";
 }
 
 function isIOSDevice() {
@@ -87,13 +96,13 @@ function renderContactsList() {
   const list = document.getElementById("contactList");
   if (!list) return;
 
-  list.innerHTML = "";
   const contacts = getContacts();
+  list.innerHTML = "";
 
   if (!contacts.length) {
     const empty = document.createElement("li");
     empty.className = "empty-state";
-    empty.textContent = "No contacts saved yet.";
+    empty.textContent = "No contacts saved yet. Add one manually or import a .vcf/.csv file.";
     list.appendChild(empty);
     return;
   }
@@ -106,6 +115,15 @@ function renderContactsList() {
   });
 }
 
+function updateDashboardStats() {
+  const contactCount = document.getElementById("contactCount");
+  const draftCount = document.getElementById("draftCount");
+  if (!contactCount || !draftCount) return;
+
+  contactCount.textContent = String(getContacts().length);
+  draftCount.textContent = String(getDrafts().length);
+}
+
 function addManualContact(event) {
   event.preventDefault();
 
@@ -116,22 +134,29 @@ function addManualContact(event) {
   const name = nameInput.value.trim();
   const mobile = mobileInput.value.trim();
 
-  if (!name || !mobile) {
-    showStatus("Please fill in both fields before saving the contact.", "error");
+  if (!name) {
+    showStatus("Please enter a contact name.", "error");
+    return;
+  }
+
+  if (!isValidPhoneNumber(mobile)) {
+    showStatus("Please enter a valid mobile number with 8 to 15 digits.", "error");
     return;
   }
 
   const contacts = getContacts();
-  const exists = contacts.some((contact) => contact.mobile === mobile || contact.name === name);
+  const normalizedMobile = normalizePhone(mobile);
+  const exists = contacts.some((contact) => contact.mobile === normalizedMobile || contact.name === name);
 
   if (exists) {
     showStatus("This contact already exists.", "error");
     return;
   }
 
-  contacts.push({ name, mobile });
+  contacts.push({ name, mobile: normalizedMobile });
   saveContacts(contacts);
   renderContactsList();
+  updateDashboardStats();
   event.target.reset();
   showStatus("Contact added successfully.", "success");
 }
@@ -167,21 +192,21 @@ function parseVCard(text) {
 
       if (line.toUpperCase().startsWith("TEL")) {
         const value = line.split(":").slice(1).join(":").trim();
-        if (!mobile) {
+        if (!mobile && isValidPhoneNumber(value)) {
           mobile = normalizePhone(value);
         }
       }
     });
 
-    if (name || mobile) {
+    if ((name || mobile) && mobile) {
       contacts.push({
         name: name || "Imported Contact",
-        mobile: mobile || ""
+        mobile
       });
     }
   });
 
-  return contacts.filter((contact) => contact.mobile);
+  return contacts;
 }
 
 function parseCSV(text) {
@@ -191,10 +216,10 @@ function parseCSV(text) {
   rows.slice(1).forEach((row) => {
     const cells = row.split(",");
     const name = (cells[0] || "").trim();
-    const mobile = normalizePhone(cells[1] || cells[2] || "");
+    const mobile = (cells[1] || cells[2] || "").trim();
 
-    if (name && mobile) {
-      contacts.push({ name, mobile });
+    if (name && isValidPhoneNumber(mobile)) {
+      contacts.push({ name, mobile: normalizePhone(mobile) });
     }
   });
 
@@ -206,14 +231,21 @@ function mergeImportedContacts(newContacts) {
   const merged = [...existing];
 
   newContacts.forEach((contact) => {
-    const exists = merged.some((item) => item.mobile === contact.mobile || item.name === contact.name);
-    if (!exists) {
-      merged.push(contact);
-    }
+    const shouldAdd = isValidPhoneNumber(contact.mobile);
+    if (!shouldAdd) return;
+
+    const normalizedContact = {
+      name: (contact.name || "Imported Contact").trim() || "Imported Contact",
+      mobile: normalizePhone(contact.mobile)
+    };
+
+    const exists = merged.some((item) => item.mobile === normalizedContact.mobile || item.name === normalizedContact.name);
+    if (!exists) merged.push(normalizedContact);
   });
 
   saveContacts(merged);
   renderContactsList();
+  updateDashboardStats();
 }
 
 function importContactsFromFile(file) {
@@ -265,9 +297,10 @@ async function pickContactFromDevice() {
 
     const imported = selected
       .map((contact) => {
-        const phone = contact.tel && contact.tel[0] ? contact.tel[0].replace(/[^\d+]/g, "") : "";
+        const rawPhone = contact.tel && contact.tel[0] ? contact.tel[0] : "";
+        const phone = normalizePhone(rawPhone);
         const name = contact.name || "Imported Contact";
-        return phone ? { name, mobile: phone } : null;
+        return isValidPhoneNumber(rawPhone) ? { name, mobile: phone } : null;
       })
       .filter(Boolean);
 
@@ -375,6 +408,7 @@ function saveDraft() {
   drafts.push({ label: `Draft ${drafts.length + 1}`, text });
   saveDrafts(drafts);
   renderDrafts();
+  updateDashboardStats();
   showStatus("Draft saved successfully.", "success");
 }
 
@@ -484,7 +518,7 @@ function triggerMessage(type) {
 
 function ensureLoggedIn() {
   const page = document.body.dataset.page || "login";
-  const protectedPages = ["add-contact", "import-contacts", "send-message"];
+  const protectedPages = ["dashboard", "add-contact", "import-contacts", "send-message"];
 
   if (protectedPages.includes(page) && !isLoggedIn()) {
     window.location.href = "index.html";
@@ -501,7 +535,7 @@ function initLoginPage() {
   const toggle = document.getElementById("togglePassword");
 
   if (isLoggedIn()) {
-    window.location.href = "send-message.html";
+    window.location.href = "dashboard.html";
     return;
   }
 
@@ -518,7 +552,7 @@ function initLoginPage() {
 
     if (validUsers[username] && validUsers[username] === password) {
       sessionStorage.setItem(sessionKey, "true");
-      window.location.href = "send-message.html";
+      window.location.href = "dashboard.html";
       return;
     }
 
@@ -546,6 +580,7 @@ function initAddContactPage() {
   const form = document.getElementById("contactForm");
   bindIfExists(form, "submit", addManualContact);
   renderContactsList();
+  updateDashboardStats();
 }
 
 function initImportPage() {
@@ -565,6 +600,7 @@ function initImportPage() {
 
   bindIfExists(deviceBtn, "click", pickContactFromDevice);
   renderContactsList();
+  updateDashboardStats();
 }
 
 function initSendMessagePage() {
@@ -586,6 +622,11 @@ function initSendMessagePage() {
 
   renderRecipientOptions();
   renderDrafts();
+  updateDashboardStats();
+}
+
+function initDashboardPage() {
+  updateDashboardStats();
 }
 
 function initApp() {
@@ -600,6 +641,10 @@ function initApp() {
 
   if (!ensureLoggedIn()) return;
   initSharedControls();
+
+  if (page === "dashboard") {
+    initDashboardPage();
+  }
 
   if (page === "add-contact") {
     initAddContactPage();
