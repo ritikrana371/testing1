@@ -30,9 +30,7 @@ body[data-theme="dark"] {
   --button-light: #1e293b;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -63,20 +61,57 @@ body[data-theme="dark"] {
   padding: 0 1rem 2rem;
 }
 
-.hidden {
-  display: none !important;
+.page-split {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 1.5rem;
 }
 
-.brand {
-  margin: 0 0 0.5rem;
-  font-size: 2rem;
+.page-header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-wrap h1 {
+  margin: 0;
   color: var(--primary-dark);
+  font-size: clamp(1.5rem, 2vw, 2rem);
 }
 
-.subtitle {
-  color: var(--muted);
-  margin: 0 0 1.5rem;
-  line-height: 1.5;
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--primary-dark);
+  background: var(--button-light);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font-weight: 600;
+}
+
+.nav-link.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.page-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px var(--shadow);
 }
 
 .form-group {
@@ -89,16 +124,11 @@ label {
   font-weight: 600;
 }
 
-input,
-select,
-textarea,
-button {
+input, select, textarea, button {
   font: inherit;
 }
 
-input,
-select,
-textarea {
+input, select, textarea {
   width: 100%;
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--border);
@@ -107,155 +137,108 @@ textarea {
   color: var(--text);
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
-  border: 1px solid var(--primary);
+  border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.12);
 }
 
-.password-wrap {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.password-wrap input {
-  flex: 1;
-}
-
-.toggle-password {
-  border: 1px solid var(--border);
-  background: var(--button-light);
-  color: var(--text);
-  padding: 0.7rem 0.8rem;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.primary-btn,
-.secondary-btn,
-.logout-btn,
-.theme-toggle,
-.ghost-btn {
+button {
   border: none;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 700;
 }
 
+.primary-btn,
+.secondary-btn,
+.logout-btn,
+.theme-toggle {
+  padding: 0.8rem 1rem;
+}
+
 .primary-btn {
   width: 100%;
   background: var(--primary);
   color: white;
-  padding: 0.85rem 1rem;
 }
 
 .secondary-btn,
-.ghost-btn,
-.theme-toggle,
-.logout-btn {
+.logout-btn,
+.theme-toggle {
   background: var(--button-light);
   color: var(--primary-dark);
   border: 1px solid var(--border);
 }
 
-.secondary-btn.small,
-.ghost-btn {
-  padding: 0.65rem 0.9rem;
+.full-width {
+  width: 100%;
 }
 
 .send-btn {
-  background: var(--primary);
+  flex: 1;
+  min-width: 120px;
 }
 
-.message {
+.message,
+.status-message {
   min-height: 1.2rem;
   margin-top: 1rem;
   font-size: 0.95rem;
   font-weight: 600;
 }
 
-.message.error { color: var(--error); }
-.message.success { color: var(--success); }
+.message.error,
+.status-message.error { color: var(--error); }
+.message.success,
+.status-message.success { color: var(--success); }
 
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.header-title-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.app-header h1 {
+.contact-list {
+  list-style: none;
+  padding: 0;
   margin: 0;
-}
-
-.welcome-text {
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.dashboard {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.5rem;
-}
-
-.panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.25rem;
-  box-shadow: 0 10px 30px var(--shadow);
-}
-
-.action-panel {
-  min-height: 100%;
-}
-
-.import-panel {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  gap: 0.6rem;
 }
 
-.import-box,
-.device-import-box {
-  margin-top: 1rem;
-}
-
-.import-box input[type="file"] {
-  margin-top: 0.45rem;
-  margin-bottom: 0.75rem;
-  padding: 0.6rem;
+.contact-item,
+.empty-state {
   background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+  color: var(--text);
 }
 
-.import-btn,
-.full-width {
-  width: 100%;
-}
-
-.contact-search-wrap {
-  margin-bottom: 0.75rem;
-}
-
-.contact-dropdown-wrap {
+.selected-contact-info {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 0.8rem 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
   margin-bottom: 1rem;
+}
+
+.composer-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.draft-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.draft-row select {
+  flex: 1;
 }
 
 #contactSelect {
@@ -275,68 +258,22 @@ textarea:focus {
   margin: 0.15rem 0;
 }
 
-.selected-contact-info {
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  padding: 0.8rem 0.9rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.composer-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-top: 0.5rem;
-}
-
-.composer-actions .primary-btn,
-.composer-actions .secondary-btn {
-  flex: 1;
-  min-width: 130px;
-}
-
-.drafts-box {
-  margin-top: 1.25rem;
-}
-
-.draft-row {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.draft-row select {
-  flex: 1;
-}
-
-.status-message {
-  min-height: 1.2rem;
-  margin-top: 1rem;
-  font-weight: 600;
-}
-
-.status-message.success {
-  color: var(--success);
-}
-
-.status-message.error {
-  color: var(--error);
-}
-
 @media (max-width: 980px) {
-  .dashboard {
+  .page-split {
     grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
 @media (max-width: 760px) {
-  .app-header {
+  .draft-row,
+  .composer-actions,
+  .top-nav {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
   }
 }

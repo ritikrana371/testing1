@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Contact</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-theme="light" data-page="add-contact">
+  <header class="page-header">
+    <div class="brand-wrap">
+      <h1>Credflex Messaging Panel</h1>
+    </div>
+
+    <nav class="top-nav" aria-label="Main navigation">
+      <a href="add-contact.html" class="nav-link active">Add Contact</a>
+      <a href="import-contacts.html" class="nav-link">Import Contacts</a>
+      <a href="send-message.html" class="nav-link">Send Messages</a>
+      <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="page-card">
+      <h2>Add User Manually</h2>
+
+      <form id="contactForm">
+        <div class="form-group">
+          <label for="contactName">Name</label>
+          <input id="contactName" type="text" placeholder="Enter contact name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="contactMobile">Mobile Number</label>
+          <input id="contactMobile" type="tel" placeholder="Enter mobile number" required />
+        </div>
+
+        <button type="submit" class="primary-btn">Add User</button>
+      </form>
+    </section>
+
+    <section class="page-card">
+      <h3>Saved Contacts</h3>
+      <ul id="contactList" class="contact-list"></ul>
+      <div id="statusMessage" class="status-message" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -9,76 +9,10 @@ const contactStorageKey = "saved-contacts";
 const draftStorageKey = "saved-drafts";
 const themeStorageKey = "app-theme";
 
-const loginScreen = document.getElementById("loginScreen");
-const contentPage = document.getElementById("contentPage");
-const loginForm = document.getElementById("loginForm");
-const loginMessage = document.getElementById("loginMessage");
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
-const togglePasswordBtn = document.getElementById("togglePassword");
-const logoutBtn = document.getElementById("logoutBtn");
-const themeToggleBtn = document.getElementById("themeToggle");
-const contactForm = document.getElementById("contactForm");
-const contactNameInput = document.getElementById("contactName");
-const contactMobileInput = document.getElementById("contactMobile");
-const pickContactBtn = document.getElementById("pickContactBtn");
-const contactSearchInput = document.getElementById("contactSearch");
-const contactSelect = document.getElementById("contactSelect");
-const selectedContactInfo = document.getElementById("selectedContactInfo");
-const contactFileInput = document.getElementById("contactFile");
-const importContactsBtn = document.getElementById("importContactsBtn");
-const messageText = document.getElementById("messageText");
-const saveDraftBtn = document.getElementById("saveDraftBtn");
-const loadDraftBtn = document.getElementById("loadDraftBtn");
-const draftSelect = document.getElementById("draftSelect");
-const copyMessageBtn = document.getElementById("copyMessageBtn");
-const sendSmsBtn = document.getElementById("sendSmsBtn");
-const sendWhatsAppBtn = document.getElementById("sendWhatsAppBtn");
-const statusMessage = document.getElementById("statusMessage");
-
 function bindIfExists(element, eventName, handler) {
   if (element) {
     element.addEventListener(eventName, handler);
   }
-}
-
-function showMessage(el, text, type) {
-  if (!el) return;
-  el.textContent = text;
-  el.className = type ? `message ${type}` : "message";
-}
-
-function showStatus(text, type = "") {
-  if (!statusMessage) return;
-  statusMessage.textContent = text;
-  statusMessage.className = type ? `status-message ${type}` : "status-message";
-}
-
-function isLoggedIn() {
-  return sessionStorage.getItem(sessionKey) === "true";
-}
-
-function applyTheme(theme) {
-  const activeTheme = theme || "light";
-  document.body.setAttribute("data-theme", activeTheme);
-  if (themeToggleBtn) {
-    themeToggleBtn.textContent = activeTheme === "dark" ? "☀️ Light" : "🌙 Dark";
-  }
-  localStorage.setItem(themeStorageKey, activeTheme);
-}
-
-function showLogin() {
-  if (loginScreen) loginScreen.classList.remove("hidden");
-  if (contentPage) contentPage.classList.add("hidden");
-  if (usernameInput) usernameInput.focus();
-}
-
-function showContent(username) {
-  if (loginScreen) loginScreen.classList.add("hidden");
-  if (contentPage) contentPage.classList.remove("hidden");
-  const userNameLabel = document.getElementById("userNameLabel");
-  if (userNameLabel) userNameLabel.textContent = username;
-  sessionStorage.setItem(sessionKey, "true");
 }
 
 function getContacts() {
@@ -105,6 +39,33 @@ function saveDrafts(drafts) {
   localStorage.setItem(draftStorageKey, JSON.stringify(drafts));
 }
 
+function isLoggedIn() {
+  return sessionStorage.getItem(sessionKey) === "true";
+}
+
+function showMessage(el, text, type) {
+  if (!el) return;
+  el.textContent = text;
+  el.className = type ? `message ${type}` : "message";
+}
+
+function showStatus(text, type = "") {
+  const el = document.getElementById("statusMessage");
+  if (!el) return;
+  el.textContent = text;
+  el.className = type ? `status-message ${type}` : "status-message";
+}
+
+function applyTheme(theme) {
+  const activeTheme = theme || "light";
+  document.body.setAttribute("data-theme", activeTheme);
+  const toggle = document.getElementById("themeToggle");
+  if (toggle) {
+    toggle.textContent = activeTheme === "dark" ? "☀️ Light" : "🌙 Dark";
+  }
+  localStorage.setItem(themeStorageKey, activeTheme);
+}
+
 function normalizePhone(value) {
   if (!value) return "";
   const cleaned = value.replace(/[^\d+]/g, "");
@@ -120,6 +81,67 @@ function normalizePhoneForIntent(value) {
 function isIOSDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function ensureLoggedIn() {
+  if (!isLoggedIn() && !window.location.pathname.endsWith("/index.html") && !window.location.pathname.endsWith("index.html")) {
+    window.location.href = "index.html";
+    return false;
+  }
+  return true;
+}
+
+function renderContactsList() {
+  const list = document.getElementById("contactList");
+  if (!list) return;
+
+  const contacts = getContacts();
+  list.innerHTML = "";
+
+  if (!contacts.length) {
+    const empty = document.createElement("li");
+    empty.className = "empty-state";
+    empty.textContent = "No contacts saved yet.";
+    list.appendChild(empty);
+    return;
+  }
+
+  contacts.forEach((contact) => {
+    const item = document.createElement("li");
+    item.className = "contact-item";
+    item.textContent = `${contact.name} — ${contact.mobile}`;
+    list.appendChild(item);
+  });
+}
+
+function addManualContact(event) {
+  event.preventDefault();
+
+  const nameInput = document.getElementById("contactName");
+  const mobileInput = document.getElementById("contactMobile");
+  if (!nameInput || !mobileInput) return;
+
+  const name = nameInput.value.trim();
+  const mobile = mobileInput.value.trim();
+
+  if (!name || !mobile) {
+    showStatus("Please fill in both fields before saving the contact.", "error");
+    return;
+  }
+
+  const contacts = getContacts();
+  const exists = contacts.some((contact) => contact.mobile === mobile || contact.name === name);
+
+  if (exists) {
+    showStatus("This contact already exists.", "error");
+    return;
+  }
+
+  contacts.push({ name, mobile });
+  saveContacts(contacts);
+  renderContactsList();
+  event.target.reset();
+  showStatus("Contact added successfully.", "success");
 }
 
 function parseVCard(text) {
@@ -153,17 +175,12 @@ function parseVCard(text) {
 
       if (line.toUpperCase().startsWith("TEL")) {
         const value = line.split(":").slice(1).join(":").trim();
-        if (!mobile) {
-          mobile = normalizePhone(value);
-        }
+        if (!mobile) mobile = normalizePhone(value);
       }
     });
 
     if (name || mobile) {
-      contacts.push({
-        name: name || "Imported Contact",
-        mobile: mobile || ""
-      });
+      contacts.push({ name: name || "Imported Contact", mobile: mobile || "" });
     }
   });
 
@@ -193,25 +210,16 @@ function mergeImportedContacts(newContacts) {
 
   newContacts.forEach((contact) => {
     const exists = merged.some((item) => item.mobile === contact.mobile || item.name === contact.name);
-    if (!exists) {
-      merged.push(contact);
-    }
+    if (!exists) merged.push(contact);
   });
 
   saveContacts(merged);
-  renderContacts();
+  renderContactsList();
 }
 
-function importContactsFromFile() {
-  if (!contactFileInput) {
-    showStatus("Import controls are not available on this page.", "error");
-    return;
-  }
-
-  const file = contactFileInput.files[0];
-
+function importContactsFromFile(file) {
   if (!file) {
-    showStatus("Please select a .vcf or .csv file first.", "error");
+    showStatus("Please choose a .vcf or .csv file first.", "error");
     return;
   }
 
@@ -221,11 +229,9 @@ function importContactsFromFile() {
     .then((content) => {
       let contacts = [];
 
-      if (fileName.endsWith(".vcf")) {
-        contacts = parseVCard(content);
-      } else if (fileName.endsWith(".csv")) {
-        contacts = parseCSV(content);
-      } else {
+      if (fileName.endsWith(".vcf")) contacts = parseVCard(content);
+      else if (fileName.endsWith(".csv")) contacts = parseCSV(content);
+      else {
         showStatus("Unsupported file type. Please upload a .vcf or .csv file.", "error");
         return;
       }
@@ -236,7 +242,6 @@ function importContactsFromFile() {
       }
 
       mergeImportedContacts(contacts);
-      contactFileInput.value = "";
       showStatus(`${contacts.length} contact(s) imported successfully.`, "success");
     })
     .catch(() => {
@@ -246,19 +251,18 @@ function importContactsFromFile() {
 
 async function pickContactFromDevice() {
   if (!("contacts" in navigator) || !("select" in navigator.contacts)) {
-    showStatus("Contact picker is not supported in this browser. Please add the mobile number manually.", "error");
+    showStatus("Contact picker is not supported in this browser.", "error");
     return;
   }
 
   try {
-    const contacts = await navigator.contacts.select(["name", "tel"], { multiple: true });
-
-    if (!contacts || !contacts.length) {
+    const selected = await navigator.contacts.select(["name", "tel"], { multiple: true });
+    if (!selected || !selected.length) {
       showStatus("No contact was selected.", "error");
       return;
     }
 
-    const imported = contacts
+    const imported = selected
       .map((contact) => {
         const phone = contact.tel && contact.tel[0] ? contact.tel[0].replace(/[^\d+]/g, "") : "";
         const name = contact.name || "Imported Contact";
@@ -273,52 +277,57 @@ async function pickContactFromDevice() {
 
     mergeImportedContacts(imported);
     showStatus(`${imported.length} contact(s) added from your device.`, "success");
-  } catch (error) {
-    console.error(error);
-    showStatus("Your browser blocked access to phone contacts. Please use the manual form or import a .vcf file.", "error");
+  } catch {
+    showStatus("Your browser blocked access to phone contacts. Please use manual or file import.", "error");
   }
 }
 
 function getSelectedContacts() {
-  if (!contactSelect) return [];
-  const selectedValues = Array.from(contactSelect.selectedOptions).map((option) => option.value);
+  const select = document.getElementById("contactSelect");
+  if (!select) return [];
+
+  const selectedValues = Array.from(select.selectedOptions).map((option) => option.value);
   return getContacts().filter((contact) => selectedValues.includes(contact.mobile));
 }
 
 function updateSelectedContactInfo() {
-  if (!selectedContactInfo) return;
-  const selectedContacts = getSelectedContacts();
+  const info = document.getElementById("selectedContactInfo");
+  if (!info) return;
 
+  const selectedContacts = getSelectedContacts();
   if (!selectedContacts.length) {
-    selectedContactInfo.textContent = "No contact selected";
+    info.textContent = "No contact selected";
     return;
   }
 
   const names = selectedContacts.map((contact) => `${contact.name} (${contact.mobile})`);
-  selectedContactInfo.textContent = names.length > 3
+  info.textContent = names.length > 3
     ? `${names.length} contacts selected: ${names.slice(0, 3).join(", ")} ...`
     : names.join(", ");
 }
 
-function renderContacts() {
-  const searchTerm = (contactSearchInput ? (contactSearchInput.value || "") : "").trim().toLowerCase();
-  const previousSelected = contactSelect ? new Set(Array.from(contactSelect.selectedOptions).map((option) => option.value)) : new Set();
+function renderRecipientOptions() {
+  const select = document.getElementById("contactSelect");
+  const searchInput = document.getElementById("contactSearch");
+  if (!select || !searchInput) return;
+
+  const searchTerm = searchInput.value.trim().toLowerCase();
+  const previousSelected = new Set(Array.from(select.selectedOptions).map((option) => option.value));
   const contacts = getContacts().filter((contact) => {
     const name = (contact.name || "").toLowerCase();
     const mobile = (contact.mobile || "").toLowerCase();
     return name.includes(searchTerm) || mobile.includes(searchTerm);
   });
 
-  if (!contactSelect) return;
-  contactSelect.innerHTML = "";
+  select.innerHTML = "";
 
   if (!contacts.length) {
     const placeholder = document.createElement("option");
-    placeholder.textContent = "No contact match found";
+    placeholder.textContent = "No matching contact found";
     placeholder.disabled = true;
-    contactSelect.appendChild(placeholder);
-    contactSelect.size = 1;
-    if (selectedContactInfo) selectedContactInfo.textContent = "No contact selected";
+    select.appendChild(placeholder);
+    select.size = 1;
+    updateSelectedContactInfo();
     return;
   }
 
@@ -327,24 +336,21 @@ function renderContacts() {
     option.value = contact.mobile;
     option.textContent = `${contact.name} — ${contact.mobile}`;
     option.selected = previousSelected.has(contact.mobile);
-    contactSelect.appendChild(option);
+    select.appendChild(option);
   });
 
-  contactSelect.size = Math.min(10, Math.max(contacts.length, 1));
+  select.size = Math.min(10, Math.max(contacts.length, 1));
   updateSelectedContactInfo();
 }
 
-bindIfExists(contactSearchInput, "input", renderContacts);
-bindIfExists(contactSelect, "change", updateSelectedContactInfo);
-
 function renderDrafts() {
+  const draftSelect = document.getElementById("draftSelect");
   if (!draftSelect) return;
+
   const drafts = getDrafts();
   draftSelect.innerHTML = '<option value="">Select a saved message</option>';
 
-  if (!drafts.length) {
-    return;
-  }
+  if (!drafts.length) return;
 
   drafts.forEach((draft, index) => {
     const option = document.createElement("option");
@@ -354,67 +360,29 @@ function renderDrafts() {
   });
 }
 
-function addContact(event) {
-  if (event) event.preventDefault();
-
-  if (!contactNameInput || !contactMobileInput) {
-    showStatus("Contact form fields are missing.", "error");
-    return;
-  }
-
-  const name = contactNameInput.value.trim();
-  const mobile = contactMobileInput.value.trim();
-
-  if (!name || !mobile) {
-    showStatus("Please fill in the contact name and mobile number.", "error");
-    return;
-  }
-
-  const contacts = getContacts();
-  const exists = contacts.some((contact) => contact.mobile === mobile || contact.name === name);
-
-  if (exists) {
-    showStatus("This contact already exists.", "error");
-    return;
-  }
-
-  contacts.push({ name, mobile });
-  saveContacts(contacts);
-  renderContacts();
-  contactForm.reset();
-  showStatus("Contact added successfully.", "success");
-}
-
 function saveDraft() {
-  if (!messageText) {
-    showStatus("Message composer is not available.", "error");
-    return;
-  }
+  const messageInput = document.getElementById("messageText");
+  if (!messageInput) return;
 
-  const text = messageText.value.trim();
-
+  const text = messageInput.value.trim();
   if (!text) {
     showStatus("Write a message before saving the draft.", "error");
     return;
   }
 
   const drafts = getDrafts();
-  const label = `Draft ${drafts.length + 1}`;
-
-  drafts.push({ label, text });
+  drafts.push({ label: `Draft ${drafts.length + 1}`, text });
   saveDrafts(drafts);
   renderDrafts();
   showStatus("Draft saved successfully.", "success");
 }
 
 function loadDraft() {
-  if (!draftSelect) {
-    showStatus("Draft selector is unavailable.", "error");
-    return;
-  }
+  const draftSelect = document.getElementById("draftSelect");
+  const messageInput = document.getElementById("messageText");
+  if (!draftSelect || !messageInput) return;
 
   const selectedIndex = draftSelect.value;
-
   if (!selectedIndex) {
     showStatus("Please select a saved draft first.", "error");
     return;
@@ -422,26 +390,20 @@ function loadDraft() {
 
   const drafts = getDrafts();
   const selectedDraft = drafts[Number(selectedIndex)];
-
   if (!selectedDraft) {
     showStatus("Draft not found.", "error");
     return;
   }
 
-  if (messageText) {
-    messageText.value = selectedDraft.text;
-  }
+  messageInput.value = selectedDraft.text;
   showStatus("Draft loaded successfully.", "success");
 }
 
 async function copyMessage() {
-  if (!messageText) {
-    showStatus("Message composer is not available.", "error");
-    return;
-  }
+  const messageInput = document.getElementById("messageText");
+  if (!messageInput) return;
 
-  const text = messageText.value.trim();
-
+  const text = messageInput.value.trim();
   if (!text) {
     showStatus("There is no message to copy.", "error");
     return;
@@ -472,7 +434,6 @@ function triggerSMSToContactIndex(index, contacts, messageTextValue) {
   const isIOS = isIOSDevice();
   const queryParam = isIOS ? "&body=" : "?body=";
   const smsUrl = `sms:${cleanMobile}${queryParam}${encodeURIComponent(messageTextValue)}`;
-
   const proceed = window.confirm(`Send SMS to ${contact.name} (${contact.mobile})? (${index + 1}/${contacts.length})`);
 
   if (!proceed) {
@@ -486,7 +447,10 @@ function triggerSMSToContactIndex(index, contacts, messageTextValue) {
 
 function triggerMessage(type) {
   const selectedContacts = getSelectedContacts();
-  const text = messageText ? messageText.value.trim() : "";
+  const messageInput = document.getElementById("messageText");
+  if (!messageInput) return;
+
+  const text = messageInput.value.trim();
 
   if (!selectedContacts.length) {
     showStatus("Please select at least one recipient before sending.", "error");
@@ -506,73 +470,210 @@ function triggerMessage(type) {
   if (type === "whatsapp") {
     const contact = selectedContacts[0];
     const mobile = contact ? normalizePhoneForIntent(contact.mobile) : "";
-
     if (!mobile) {
       showStatus("Please select a valid contact before sending WhatsApp.", "error");
       return;
     }
 
-    const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(text)}`;
-    window.open(whatsappUrl, "_blank");
+    const url = `https://wa.me/${mobile}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
     showStatus(`Opening WhatsApp chat with ${contact.name}.`, "success");
   }
 }
 
-loginForm.addEventListener("submit", (event) => {
-  event.preventDefault();
+function initLoginPage() {
+  const form = document.getElementById("loginForm");
+  const usernameInput = document.getElementById("username");
+  const passwordInput = document.getElementById("password");
+  const toggle = document.getElementById("togglePassword");
 
-  const username = usernameInput.value.trim();
-  const password = passwordInput.value.trim();
+  if (form) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value.trim();
 
-  if (!username || !password) {
-    showMessage(loginMessage, "Please enter both username and password.", "error");
+      if (!username || !password) {
+        showMessage(document.getElementById("loginMessage"), "Please enter both username and password.", "error");
+        return;
+      }
+
+      if (validUsers[username] && validUsers[username] === password) {
+        sessionStorage.setItem(sessionKey, "true");
+        window.location.href = "send-message.html";
+      } else {
+        showMessage(document.getElementById("loginMessage"), "Invalid username or password. Please try again.", "error");
+        form.reset();
+      }
+    });
+  }
+
+  bindIfExists(toggle, "click", () => {
+    if (!passwordInput) return;
+    const isPassword = passwordInput.type === "password";
+    passwordInput.type = isPassword ? "text" : "password";
+    toggle.textContent = isPassword ? "Hide" : "Show";
+  });
+}
+
+function initSharedControls() {
+  const themeToggle = document.getElementById("themeToggle");
+  bindIfExists(themeToggle, "click", () => {
+    const currentTheme = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(currentTheme);
+  });
+
+  const logoutBtn = document.getElementById("logoutBtn");
+  bindIfExists(logoutBtn, "click", () => {
+    sessionStorage.removeItem(sessionKey);
+    window.location.href = "index.html";
+  });
+}
+
+function initAddContactPage() {
+  const form = document.getElementById("contactForm");
+  bindIfExists(form, "submit", addManualContact);
+  renderContactsList();
+}
+
+function initImportPage() {
+  const fileInput = document.getElementById("contactFileInput");
+  const importForm = document.getElementById("importContactsForm");
+  const deviceBtn = document.getElementById("deviceImportBtn");
+
+  bindIfExists(importForm, "submit", (event) => {
+    event.preventDefault();
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      importContactsFromFile(fileInput.files[0]);
+      importForm.reset();
+    } else {
+      showStatus("Please choose a .vcf or .csv file first.", "error");
+    }
+  });
+
+  bindIfExists(deviceBtn, "click", pickContactFromDevice);
+  renderContactsList();
+}
+
+function initSendMessagePage() {
+  const searchInput = document.getElementById("contactSearch");
+  const select = document.getElementById("contactSelect");
+
+  bindIfExists(searchInput, "input", renderRecipientOptions);
+  bindIfExists(select, "change", updateSelectedContactInfo);
+
+  const saveDraftBtn = document.getElementById("saveDraftBtn");
+  const loadDraftBtn = document.getElementById("loadDraftBtn");
+  const copyBtn = document.getElementById("copyMessageBtn");
+  const smsBtn = document.getElementById("sendSmsBtn");
+  const whatsappBtn = document.getElementById("sendWhatsAppBtn");
+
+  bindIfExists(saveDraftBtn, "click", saveDraft);
+  bindIfExists(loadDraftBtn, "click", loadDraft);
+  bindIfExists(copyBtn, "click", copyMessage);
+  bindIfExists(smsBtn, "click", () => triggerMessage("sms"));
+  bindIfExists(whatsappBtn, "click", () => triggerMessage("whatsapp"));
+
+  renderRecipientOptions();
+  renderDrafts();
+}
+
+function initApp() {
+  const page = document.body.dataset.page || "login";
+
+  const savedTheme = localStorage.getItem(themeStorageKey) || "light";
+  applyTheme(savedTheme);
+
+  if (page === "login") {
+    initLoginPage();
     return;
   }
 
-  if (validUsers[username] && validUsers[username] === password) {
-    showContent(username);
-    loginForm.reset();
-    showMessage(loginMessage, "", "");
-  } else {
-    showMessage(loginMessage, "Invalid username or password. Please try again.", "error");
-    loginForm.reset();
-  }
-});
+  if (!ensureLoggedIn()) return;
+  initSharedControls();
 
-bindIfExists(togglePasswordBtn, "click", () => {
-  const isPassword = passwordInput.type === "password";
-  passwordInput.type = isPassword ? "text" : "password";
-  togglePasswordBtn.textContent = isPassword ? "Hide" : "Show";
-});
-
-bindIfExists(logoutBtn, "click", () => {
-  sessionStorage.removeItem(sessionKey);
-  showLogin();
-  showMessage(loginMessage, "You have been logged out.", "success");
-});
-
-bindIfExists(themeToggleBtn, "click", () => {
-  const currentTheme = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
-  applyTheme(currentTheme);
-});
-
-bindIfExists(contactForm, "submit", addContact);
-bindIfExists(pickContactBtn, "click", pickContactFromDevice);
-bindIfExists(importContactsBtn, "click", importContactsFromFile);
-bindIfExists(saveDraftBtn, "click", saveDraft);
-bindIfExists(loadDraftBtn, "click", loadDraft);
-bindIfExists(copyMessageBtn, "click", copyMessage);
-bindIfExists(sendSmsBtn, "click", () => triggerMessage("sms"));
-bindIfExists(sendWhatsAppBtn, "click", () => triggerMessage("whatsapp"));
-
-if (isLoggedIn()) {
-  showContent("Participant");
-} else {
-  showLogin();
+  if (page === "add-contact") initAddContactPage();
+  if (page === "import-contacts") initImportPage();
+  if (page === "send-message") initSendMessagePage();
 }
 
-const savedTheme = localStorage.getItem(themeStorageKey);
-applyTheme(savedTheme || "light");
+initApp();
 
-renderContacts();
-renderDrafts();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

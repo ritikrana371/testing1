@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Import Contacts</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-theme="light" data-page="import-contacts">
+  <header class="page-header">
+    <div class="brand-wrap">
+      <h1>Credflex Messaging Panel</h1>
+    </div>
+
+    <nav class="top-nav" aria-label="Main navigation">
+      <a href="add-contact.html" class="nav-link">Add Contact</a>
+      <a href="import-contacts.html" class="nav-link active">Import Contacts</a>
+      <a href="send-message.html" class="nav-link">Send Messages</a>
+      <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
+    </nav>
+  </header>
+
+  <main class="page page-split">
+    <section class="page-card">
+      <h2>Import Contacts</h2>
+
+      <form id="importContactsForm">
+        <div class="form-group">
+          <label for="contactFileInput">Upload .vcf or .csv file</label>
+          <input id="contactFileInput" type="file" accept=".vcf,.csv" />
+        </div>
+
+        <button type="submit" class="primary-btn">Import Contacts</button>
+      </form>
+
+      <div class="form-group">
+        <button id="deviceImportBtn" type="button" class="secondary-btn full-width">Import from Device</button>
+      </div>
+
+      <div id="statusMessage" class="status-message" aria-live="polite"></div>
+    </section>
+
+    <section class="page-card">
+      <h3>Saved Contacts</h3>
+      <ul id="contactList" class="contact-list"></ul>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

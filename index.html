@@ -6,7 +6,7 @@
   <title>Participant Access</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body data-theme="light">
+<body data-theme="light" data-page="login">
   <section id="loginScreen" class="auth-shell" aria-live="polite">
     <h1 class="brand">Participant Access</h1>
     <p class="subtitle">Please sign in to access this testing page.</p>
@@ -20,17 +20,8 @@
       <div class="form-group">
         <label for="password">Password</label>
         <div class="password-wrap">
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Enter password"
-            required
-          />
-          <button id="togglePassword" type="button" class="toggle-password" aria-label="Show password">
-            Show
-          </button>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required />
+          <button id="togglePassword" type="button" class="toggle-password" aria-label="Show password">Show</button>
         </div>
       </div>
 
@@ -38,96 +29,6 @@
       <div id="loginMessage" class="message" aria-live="assertive"></div>
     </form>
   </section>
-
-  <main id="contentPage" class="page hidden" aria-live="polite">
-    <header class="app-header">
-      <div class="header-title-wrap">
-        <h1>Credflex Messaging Panel</h1>
-        <div class="welcome-text">Welcome, <span id="userNameLabel">Participant</span></div>
-      </div>
-
-      <div class="header-actions">
-        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle light and dark theme">
-          🌙 Dark
-        </button>
-        <button id="logoutBtn" class="logout-btn" type="button">Logout</button>
-      </div>
-    </header>
-
-    <div class="dashboard">
-      <section class="panel">
-        <h2>Add Contact</h2>
-
-        <form id="contactForm">
-          <div class="form-group">
-            <label for="contactName">Name</label>
-            <input id="contactName" type="text" placeholder="Enter contact name" required />
-          </div>
-
-          <div class="form-group">
-            <label for="contactMobile">Mobile Number</label>
-            <input id="contactMobile" type="tel" placeholder="Enter mobile number" required />
-          </div>
-
-          <button type="submit" class="primary-btn">Add User</button>
-        </form>
-
-        <div class="contacts-box">
-          <div class="contacts-header">
-            <h3>Saved Contacts</h3>
-          </div>
-
-          <div id="selectedContactInfo" class="selected-contact-info">No contact selected</div>
-          <ul id="contactList" class="contact-list"></ul>
-        </div>
-      </section>
-
-      <section class="panel composer-panel">
-        <h2>Send Message</h2>
-
-        <div class="form-group">
-          <label for="contactSearch">Search Recipient</label>
-          <input
-            id="contactSearch"
-            type="search"
-            placeholder="Search by name or mobile number"
-            aria-label="Search recipients by name or mobile number"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="contactSelect">Select Recipient(s)</label>
-          <select id="contactSelect" multiple size="6">
-            <option value="">Choose a contact</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="messageText">Message</label>
-          <textarea id="messageText" rows="6" placeholder="Type your message here..."></textarea>
-        </div>
-
-        <div class="composer-actions">
-          <button type="button" id="saveDraftBtn" class="secondary-btn small">Save Draft</button>
-          <button type="button" id="copyMessageBtn" class="secondary-btn small">Copy</button>
-          <button type="button" id="sendSmsBtn" class="primary-btn small send-btn">Send SMS</button>
-          <button type="button" id="sendWhatsAppBtn" class="primary-btn small send-btn">Send WhatsApp</button>
-        </div>
-
-        <div class="drafts-box">
-          <label for="draftSelect">Saved Messages</label>
-          <div class="draft-row">
-            <select id="draftSelect">
-              <option value="">Select a saved message</option>
-            </select>
-            <button type="button" id="loadDraftBtn" class="ghost-btn">Use</button>
-          </div>
-        </div>
-
-        <div id="statusMessage" class="status-message" aria-live="polite"></div>
-      </section>
-    </div>
-  </main>
 
   <script src="script.js"></script>
 </body>
