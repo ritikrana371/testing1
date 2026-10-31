@@ -36,12 +36,20 @@ const sendSmsBtn = document.getElementById("sendSmsBtn");
 const sendWhatsAppBtn = document.getElementById("sendWhatsAppBtn");
 const statusMessage = document.getElementById("statusMessage");
 
+function bindIfExists(element, eventName, handler) {
+  if (element) {
+    element.addEventListener(eventName, handler);
+  }
+}
+
 function showMessage(el, text, type) {
+  if (!el) return;
   el.textContent = text;
   el.className = type ? `message ${type}` : "message";
 }
 
 function showStatus(text, type = "") {
+  if (!statusMessage) return;
   statusMessage.textContent = text;
   statusMessage.className = type ? `status-message ${type}` : "status-message";
 }
@@ -53,20 +61,23 @@ function isLoggedIn() {
 function applyTheme(theme) {
   const activeTheme = theme || "light";
   document.body.setAttribute("data-theme", activeTheme);
-  themeToggleBtn.textContent = activeTheme === "dark" ? "☀️ Light" : "🌙 Dark";
+  if (themeToggleBtn) {
+    themeToggleBtn.textContent = activeTheme === "dark" ? "☀️ Light" : "🌙 Dark";
+  }
   localStorage.setItem(themeStorageKey, activeTheme);
 }
 
 function showLogin() {
-  loginScreen.classList.remove("hidden");
-  contentPage.classList.add("hidden");
-  usernameInput.focus();
+  if (loginScreen) loginScreen.classList.remove("hidden");
+  if (contentPage) contentPage.classList.add("hidden");
+  if (usernameInput) usernameInput.focus();
 }
 
 function showContent(username) {
-  loginScreen.classList.add("hidden");
-  contentPage.classList.remove("hidden");
-  document.getElementById("userNameLabel").textContent = username;
+  if (loginScreen) loginScreen.classList.add("hidden");
+  if (contentPage) contentPage.classList.remove("hidden");
+  const userNameLabel = document.getElementById("userNameLabel");
+  if (userNameLabel) userNameLabel.textContent = username;
   sessionStorage.setItem(sessionKey, "true");
 }
 
@@ -192,6 +203,11 @@ function mergeImportedContacts(newContacts) {
 }
 
 function importContactsFromFile() {
+  if (!contactFileInput) {
+    showStatus("Import controls are not available on this page.", "error");
+    return;
+  }
+
   const file = contactFileInput.files[0];
 
   if (!file) {
@@ -264,11 +280,13 @@ async function pickContactFromDevice() {
 }
 
 function getSelectedContacts() {
+  if (!contactSelect) return [];
   const selectedValues = Array.from(contactSelect.selectedOptions).map((option) => option.value);
   return getContacts().filter((contact) => selectedValues.includes(contact.mobile));
 }
 
 function updateSelectedContactInfo() {
+  if (!selectedContactInfo) return;
   const selectedContacts = getSelectedContacts();
 
   if (!selectedContacts.length) {
@@ -283,14 +301,15 @@ function updateSelectedContactInfo() {
 }
 
 function renderContacts() {
-  const searchTerm = (contactSearchInput.value || "").trim().toLowerCase();
-  const previousSelected = new Set(Array.from(contactSelect.selectedOptions).map((option) => option.value));
+  const searchTerm = (contactSearchInput ? (contactSearchInput.value || "") : "").trim().toLowerCase();
+  const previousSelected = contactSelect ? new Set(Array.from(contactSelect.selectedOptions).map((option) => option.value)) : new Set();
   const contacts = getContacts().filter((contact) => {
     const name = (contact.name || "").toLowerCase();
     const mobile = (contact.mobile || "").toLowerCase();
     return name.includes(searchTerm) || mobile.includes(searchTerm);
   });
 
+  if (!contactSelect) return;
   contactSelect.innerHTML = "";
 
   if (!contacts.length) {
@@ -299,7 +318,7 @@ function renderContacts() {
     placeholder.disabled = true;
     contactSelect.appendChild(placeholder);
     contactSelect.size = 1;
-    selectedContactInfo.textContent = "No contact selected";
+    if (selectedContactInfo) selectedContactInfo.textContent = "No contact selected";
     return;
   }
 
@@ -315,10 +334,11 @@ function renderContacts() {
   updateSelectedContactInfo();
 }
 
-contactSearchInput.addEventListener("input", renderContacts);
-contactSelect.addEventListener("change", updateSelectedContactInfo);
+bindIfExists(contactSearchInput, "input", renderContacts);
+bindIfExists(contactSelect, "change", updateSelectedContactInfo);
 
 function renderDrafts() {
+  if (!draftSelect) return;
   const drafts = getDrafts();
   draftSelect.innerHTML = '<option value="">Select a saved message</option>';
 
@@ -335,7 +355,12 @@ function renderDrafts() {
 }
 
 function addContact(event) {
-  event.preventDefault();
+  if (event) event.preventDefault();
+
+  if (!contactNameInput || !contactMobileInput) {
+    showStatus("Contact form fields are missing.", "error");
+    return;
+  }
 
   const name = contactNameInput.value.trim();
   const mobile = contactMobileInput.value.trim();
@@ -361,6 +386,11 @@ function addContact(event) {
 }
 
 function saveDraft() {
+  if (!messageText) {
+    showStatus("Message composer is not available.", "error");
+    return;
+  }
+
   const text = messageText.value.trim();
 
   if (!text) {
@@ -378,6 +408,11 @@ function saveDraft() {
 }
 
 function loadDraft() {
+  if (!draftSelect) {
+    showStatus("Draft selector is unavailable.", "error");
+    return;
+  }
+
   const selectedIndex = draftSelect.value;
 
   if (!selectedIndex) {
@@ -393,11 +428,18 @@ function loadDraft() {
     return;
   }
 
-  messageText.value = selectedDraft.text;
+  if (messageText) {
+    messageText.value = selectedDraft.text;
+  }
   showStatus("Draft loaded successfully.", "success");
 }
 
 async function copyMessage() {
+  if (!messageText) {
+    showStatus("Message composer is not available.", "error");
+    return;
+  }
+
   const text = messageText.value.trim();
 
   if (!text) {
@@ -444,7 +486,7 @@ function triggerSMSToContactIndex(index, contacts, messageTextValue) {
 
 function triggerMessage(type) {
   const selectedContacts = getSelectedContacts();
-  const text = messageText.value.trim();
+  const text = messageText ? messageText.value.trim() : "";
 
   if (!selectedContacts.length) {
     showStatus("Please select at least one recipient before sending.", "error");
@@ -497,31 +539,31 @@ loginForm.addEventListener("submit", (event) => {
   }
 });
 
-togglePasswordBtn.addEventListener("click", () => {
+bindIfExists(togglePasswordBtn, "click", () => {
   const isPassword = passwordInput.type === "password";
   passwordInput.type = isPassword ? "text" : "password";
   togglePasswordBtn.textContent = isPassword ? "Hide" : "Show";
 });
 
-logoutBtn.addEventListener("click", () => {
+bindIfExists(logoutBtn, "click", () => {
   sessionStorage.removeItem(sessionKey);
   showLogin();
   showMessage(loginMessage, "You have been logged out.", "success");
 });
 
-themeToggleBtn.addEventListener("click", () => {
+bindIfExists(themeToggleBtn, "click", () => {
   const currentTheme = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
   applyTheme(currentTheme);
 });
 
-contactForm.addEventListener("submit", addContact);
-pickContactBtn.addEventListener("click", pickContactFromDevice);
-importContactsBtn.addEventListener("click", importContactsFromFile);
-saveDraftBtn.addEventListener("click", saveDraft);
-loadDraftBtn.addEventListener("click", loadDraft);
-copyMessageBtn.addEventListener("click", copyMessage);
-sendSmsBtn.addEventListener("click", () => triggerMessage("sms"));
-sendWhatsAppBtn.addEventListener("click", () => triggerMessage("whatsapp"));
+bindIfExists(contactForm, "submit", addContact);
+bindIfExists(pickContactBtn, "click", pickContactFromDevice);
+bindIfExists(importContactsBtn, "click", importContactsFromFile);
+bindIfExists(saveDraftBtn, "click", saveDraft);
+bindIfExists(loadDraftBtn, "click", loadDraft);
+bindIfExists(copyMessageBtn, "click", copyMessage);
+bindIfExists(sendSmsBtn, "click", () => triggerMessage("sms"));
+bindIfExists(sendWhatsAppBtn, "click", () => triggerMessage("whatsapp"));
 
 if (isLoggedIn()) {
   showContent("Participant");
